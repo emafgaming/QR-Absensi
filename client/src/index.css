@@ -1,0 +1,111 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --lp3i-blue: #30347F;
+  --lp3i-blue-hover: #252963;
+  --lp3i-blue-light: #EEF0FA;
+  --lp3i-red: #E52B35;
+  --lp3i-red-light: #FFF0F0;
+  --lp3i-bg: #F5F6F8;
+  --lp3i-surface: #FFFFFF;
+  --lp3i-text: #202433;
+  --lp3i-muted: #687083;
+  --lp3i-border: #E1E5EC;
+  --lp3i-success: #15803D;
+  --lp3i-success-bg: #ECFDF3;
+  --lp3i-warning: #A15C07;
+  --lp3i-warning-bg: #FFF7E6;
+  --lp3i-error: #B42318;
+  --lp3i-error-bg: #FEF3F2;
+}
+
+@layer base {
+  body {
+    background-color: var(--lp3i-bg);
+    color: var(--lp3i-text);
+    font-family: 'Plus Jakarta Sans', 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
+
+/* Custom scrollbars */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+::-webkit-scrollbar-track {
+  background: #F1F4F9;
+}
+::-webkit-scrollbar-thumb {
+  background: #C9D0DC;
+  border-radius: 4px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #9CA5B8;
+}
+
+/* Scanner target animation */
+@keyframes laserSweep {
+  0% { top: 0%; opacity: 0.8; }
+  50% { top: 100%; opacity: 1; }
+  100% { top: 0%; opacity: 0.8; }
+}
+
+.laser-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #E52B35, transparent);
+  box-shadow: 0 0 10px #E52B35;
+  animation: laserSweep 2s infinite ease-in-out;
+}
+
+/* Print styling for A4 QR Cards & Reports */
+@media print {
+  @page {
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  body {
+    background: #FFFFFF !important;
+    color: #000000 !important;
+  }
+
+  /* Hide navigation, sidebar, topbar, and interactive elements */
+  aside,
+  header,
+  nav,
+  button,
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* Make print area visible and full width */
+  #print-area {
+    display: block !important;
+    position: static !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  .print-grid {
+    display: grid !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    gap: 8mm !important;
+    page-break-inside: avoid !important;
+  }
+
+  .print-card {
+    page-break-inside: avoid !important;
+    break-inside: avoid !important;
+    border: 1px dashed #718096 !important;
+    box-shadow: none !important;
+    background: #FFFFFF !important;
+  }
+}
