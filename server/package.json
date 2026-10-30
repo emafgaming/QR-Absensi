@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "dev": "tsx watch src/server.ts",
-    "build": "tsc",
+    "build": "prisma generate && tsc",
     "start": "node dist/server.js",
     "db:mode:mysql": "node prisma/switch-db.js mysql && prisma generate",
     "db:mode:postgres": "node prisma/switch-db.js postgres && prisma generate",
