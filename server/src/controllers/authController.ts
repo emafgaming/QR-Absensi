@@ -71,6 +71,7 @@ export async function login(req: Request, res: Response) {
     return res.status(500).json({
       success: false,
       message: 'Terjadi kesalahan internal saat login.',
+      error: error?.message || String(error),
     });
   }
 }

@@ -84,9 +84,20 @@ const authLimiter = rateLimitMiddleware({
 app.use('/api/v1/auth/login', authLimiter);
 
 // Health check endpoint
-app.get('/api/v1/health', (req, res) => {
+app.get('/api/v1/health', async (req, res) => {
+  let dbStatus = 'disconnected';
+  let dbError = null;
+  try {
+    const prisma = (await import('./prisma.js')).default;
+    await prisma.$queryRaw`SELECT 1`;
+    dbStatus = 'connected';
+  } catch (err: any) {
+    dbError = err?.message || String(err);
+  }
   res.json({
     status: 'healthy',
+    database: dbStatus,
+    dbError,
     timestamp: new Date().toISOString(),
     service: 'WisudaAttend API',
     version: '1.0.0',
