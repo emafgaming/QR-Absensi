@@ -10,7 +10,10 @@ const app = express();
 
 // Restore originalUrl if Vercel serverless rewrite mutated req.url
 app.use((req, res, next) => {
-  if (req.originalUrl && req.url !== req.originalUrl) {
+  const vercelPath = (req.headers['x-matched-path'] as string) || (req.headers['x-forwarded-uri'] as string);
+  if (vercelPath && (req.url === '/api' || req.url.startsWith('/dist/server'))) {
+    req.url = vercelPath;
+  } else if (req.originalUrl && req.url !== req.originalUrl && req.originalUrl !== '/dist/server.js') {
     req.url = req.originalUrl;
   }
   next();
