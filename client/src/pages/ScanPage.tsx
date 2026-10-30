@@ -67,10 +67,27 @@ export const ScanPage: React.FC = () => {
   // Connection State
   const [isOnline, setIsOnline] = useState(navigator.onLine);
 
-  // Refs for scanner instance and cooldown
+  // Refs for scanner instance, session sync, and cooldown
   const html5QrCodeRef = useRef<Html5Qrcode | null>(null);
   const cooldownRef = useRef<boolean>(false);
   const lastScannedTokenRef = useRef<string>('');
+  const selectedSessionIdRef = useRef<string>(selectedSessionId);
+  const sessionsRef = useRef<any[]>(sessions);
+  const soundEnabledRef = useRef<boolean>(soundEnabled);
+  const onScanSuccessRef = useRef<(decodedText: string) => Promise<void>>();
+
+  // Keep refs immediately synchronized with current state
+  useEffect(() => {
+    selectedSessionIdRef.current = selectedSessionId;
+  }, [selectedSessionId]);
+
+  useEffect(() => {
+    sessionsRef.current = sessions;
+  }, [sessions]);
+
+  useEffect(() => {
+    soundEnabledRef.current = soundEnabled;
+  }, [soundEnabled]);
 
   // 1. Monitor online/offline
   useEffect(() => {
@@ -90,8 +107,10 @@ export const ScanPage: React.FC = () => {
       const res = await request('/sesi');
       if (res.success && res.data.length > 0) {
         setSessions(res.data);
+        sessionsRef.current = res.data;
         const openSesi = res.data.find((s: any) => s.is_open) || res.data[0];
         setSelectedSessionId(openSesi.id);
+        selectedSessionIdRef.current = openSesi.id;
         setActiveSession(openSesi);
       }
     } catch (e) {
@@ -157,7 +176,9 @@ export const ScanPage: React.FC = () => {
           qrbox: { width: 280, height: 280 },
           aspectRatio: 1.0,
         },
-        onScanSuccess,
+        (decodedText: string) => {
+          onScanSuccessRef.current?.(decodedText);
+        },
         () => {} // silent frame failure
       );
 
@@ -207,7 +228,19 @@ export const ScanPage: React.FC = () => {
     setIsProcessing(true);
 
     try {
-      if (!selectedSessionId) {
+      // Determine active session ID with multiple layers of fallback to avoid race conditions
+      let activeSessionId = selectedSessionIdRef.current;
+      if (!activeSessionId && sessionsRef.current.length > 0) {
+        const fallback = sessionsRef.current.find((s: any) => s.is_open) || sessionsRef.current[0];
+        if (fallback) {
+          activeSessionId = fallback.id;
+          setSelectedSessionId(fallback.id);
+          selectedSessionIdRef.current = fallback.id;
+          setActiveSession(fallback);
+        }
+      }
+
+      if (!activeSessionId) {
         throw new Error('Pilih sesi wisuda terlebih dahulu sebelum memindai!');
       }
 
@@ -215,12 +248,14 @@ export const ScanPage: React.FC = () => {
         method: 'POST',
         body: JSON.stringify({
           token: decodedText.trim(),
-          sesi_id: selectedSessionId,
+          sesi_id: activeSessionId,
         }),
       });
 
+      const playAudio = soundEnabledRef.current;
+
       if (res.status === 'SUCCESS') {
-        if (soundEnabled) sound.playSuccess();
+        if (playAudio) sound.playSuccess();
         const scanData: ScanResultData = {
           type: 'SUCCESS',
           title: 'Presensi Berhasil Terverifikasi!',
@@ -241,7 +276,7 @@ export const ScanPage: React.FC = () => {
           ...prev.slice(0, 9),
         ]);
       } else if (res.status === 'ALREADY_RECORDED') {
-        if (soundEnabled) sound.playDuplicate();
+        if (playAudio) sound.playDuplicate();
         const scanData: ScanResultData = {
           type: 'ALREADY_RECORDED',
           title: 'Wisudawan Sudah Hadir Sebelumnya',
@@ -253,7 +288,7 @@ export const ScanPage: React.FC = () => {
         setLastScanResult(scanData);
       }
     } catch (err: any) {
-      if (soundEnabled) sound.playError();
+      if (soundEnabledRef.current) sound.playError();
       const scanData: ScanResultData = {
         type: 'ERROR',
         title: 'Pemindaian Ditolak!',
@@ -270,11 +305,17 @@ export const ScanPage: React.FC = () => {
     }
   };
 
+  // Keep latest onScanSuccess in ref on every render
+  useEffect(() => {
+    onScanSuccessRef.current = onScanSuccess;
+  });
+
   // 5. Handle Manual NIM Submit
   const handleManualSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!manualNim.trim()) return;
-    if (!selectedSessionId) {
+    const activeSessionId = selectedSessionIdRef.current || selectedSessionId;
+    if (!activeSessionId) {
       setManualError('Pilih sesi wisuda terlebih dahulu.');
       return;
     }
@@ -287,7 +328,7 @@ export const ScanPage: React.FC = () => {
         method: 'POST',
         body: JSON.stringify({
           nim: manualNim.trim(),
-          sesi_id: selectedSessionId,
+          sesi_id: activeSessionId,
           catatan: manualCatatan.trim() || undefined,
         }),
       });
@@ -346,14 +387,18 @@ export const ScanPage: React.FC = () => {
       )}
 
       {/* Control Bar: Session Selector, Camera Switch, Audio Toggle */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-lp3i-neutral-surface p-5 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-lp3i-neutral-50 px-3 py-2 rounded-xl border border-lp3i-neutral-border">
-            <ScanLine className="w-4 h-4 text-lp3i-blue" />
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-lp3i-neutral-surface p-4 sm:p-5 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 bg-lp3i-neutral-50 px-3 py-2 rounded-xl border border-lp3i-neutral-border flex-1 sm:flex-none">
+            <ScanLine className="w-4 h-4 text-lp3i-blue flex-shrink-0" />
             <select
               value={selectedSessionId}
-              onChange={(e) => setSelectedSessionId(e.target.value)}
-              className="text-xs font-bold bg-transparent text-lp3i-neutral-900 focus:outline-hidden cursor-pointer"
+              onChange={(e) => {
+                const val = e.target.value;
+                setSelectedSessionId(val);
+                selectedSessionIdRef.current = val;
+              }}
+              className="text-xs font-bold bg-transparent text-lp3i-neutral-900 focus:outline-hidden cursor-pointer w-full"
             >
               {sessions.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -365,7 +410,7 @@ export const ScanPage: React.FC = () => {
 
           {activeSession && (
             <span
-              className={`text-xs font-bold px-3 py-1.5 rounded-xl border ${
+              className={`text-xs font-bold px-3 py-1.5 rounded-xl border whitespace-nowrap ${
                 activeSession.is_open
                   ? 'bg-lp3i-status-success-bg text-lp3i-status-success border-lp3i-status-success-border'
                   : 'bg-lp3i-status-error-bg text-lp3i-status-error border-lp3i-status-error-border'
@@ -376,13 +421,13 @@ export const ScanPage: React.FC = () => {
           )}
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto justify-between sm:justify-end">
           {/* Camera Selector */}
           {cameras.length > 1 && (
             <select
               value={selectedCameraId}
               onChange={(e) => setSelectedCameraId(e.target.value)}
-              className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden"
+              className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden flex-1 sm:flex-none max-w-[150px] sm:max-w-none"
             >
               {cameras.map((c, i) => (
                 <option key={c.id} value={c.id}>
@@ -395,7 +440,7 @@ export const ScanPage: React.FC = () => {
           {/* Sound Toggle */}
           <button
             onClick={() => setSoundEnabled(!soundEnabled)}
-            className={`p-2.5 rounded-xl border transition-colors ${
+            className={`p-2.5 rounded-xl border transition-colors flex-shrink-0 ${
               soundEnabled
                 ? 'bg-lp3i-blue-light text-lp3i-blue border-lp3i-blue-200'
                 : 'bg-lp3i-neutral-50 text-lp3i-neutral-muted border-lp3i-neutral-border'
@@ -411,10 +456,10 @@ export const ScanPage: React.FC = () => {
               setManualError(null);
               setIsManualModalOpen(true);
             }}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex-1 sm:flex-none"
           >
-            <Keyboard className="w-4 h-4" />
-            <span>Input NIM Manual</span>
+            <Keyboard className="w-4 h-4 flex-shrink-0" />
+            <span className="truncate">Input NIM Manual</span>
           </button>
         </div>
       </div>
@@ -422,27 +467,27 @@ export const ScanPage: React.FC = () => {
       {/* Main Operational Layout: Camera Box (Left) + Result Panel (Right) */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Left: Camera Scanner Viewport (7 Cols) */}
-        <div className="lg:col-span-7 bg-lp3i-neutral-surface rounded-2xl border border-lp3i-neutral-border shadow-subtle p-5 flex flex-col items-center">
+        <div className="lg:col-span-7 bg-lp3i-neutral-surface rounded-2xl border border-lp3i-neutral-border shadow-subtle p-4 sm:p-5 flex flex-col items-center">
           <div className="w-full flex items-center justify-between mb-4">
             <h2 className="text-sm font-extrabold text-lp3i-blue flex items-center gap-2">
-              <Camera className="w-4 h-4 text-lp3i-red" />
-              <span>Pemindai Kamera Langsung</span>
+              <Camera className="w-4 h-4 text-lp3i-red flex-shrink-0" />
+              <span className="truncate">Pemindai Kamera Langsung</span>
             </h2>
             <div className="flex items-center gap-2">
               {isProcessing && (
                 <span className="inline-flex items-center gap-1.5 text-xs font-bold text-lp3i-blue bg-lp3i-blue-light px-2.5 py-0.5 rounded-full">
                   <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                  <span>Validasi Server...</span>
+                  <span className="hidden sm:inline">Validasi Server...</span>
                 </span>
               )}
             </div>
           </div>
 
           {/* Video Container Box */}
-          <div className="relative w-full max-w-[480px] aspect-square rounded-2xl overflow-hidden bg-lp3i-blue-900 border-4 border-lp3i-blue-700 shadow-inner flex items-center justify-center">
+          <div className="relative w-full max-w-[440px] aspect-square rounded-2xl overflow-hidden bg-lp3i-blue-900 border-2 sm:border-4 border-lp3i-blue-700 shadow-inner flex items-center justify-center">
             {cameraError ? (
-              <div className="p-6 text-center text-white">
-                <CameraOff className="w-12 h-12 text-lp3i-red mx-auto mb-3" />
+              <div className="p-4 sm:p-6 text-center text-white">
+                <CameraOff className="w-10 sm:w-12 h-10 sm:h-12 text-lp3i-red mx-auto mb-3" />
                 <p className="text-xs font-bold">{cameraError}</p>
                 <button
                   onClick={() => selectedCameraId && startCamera(selectedCameraId)}
@@ -457,8 +502,8 @@ export const ScanPage: React.FC = () => {
                 {/* Laser animation */}
                 {isScanning && !isProcessing && <div className="laser-line" />}
                 {/* Targeting Corners Reticle */}
-                <div className="absolute inset-8 pointer-events-none border-2 border-dashed border-white/40 rounded-2xl flex items-center justify-center">
-                  <div className="text-[11px] font-semibold text-white/80 bg-lp3i-blue-900/80 px-3 py-1 rounded-full backdrop-blur-xs">
+                <div className="absolute inset-4 sm:inset-8 pointer-events-none border-2 border-dashed border-white/40 rounded-2xl flex items-center justify-center">
+                  <div className="text-[10px] sm:text-[11px] font-semibold text-white/90 bg-lp3i-blue-900/85 px-2.5 sm:px-3 py-1 rounded-full backdrop-blur-xs text-center">
                     Posisikan QR Code di area ini
                   </div>
                 </div>

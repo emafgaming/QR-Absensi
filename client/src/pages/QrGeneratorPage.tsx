@@ -18,6 +18,7 @@ import {
 import { request } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.js';
 import { Modal } from '../components/Modal.js';
+import { SkeletonQrCards } from '../components/Skeleton.js';
 
 export const QrGeneratorPage: React.FC = () => {
   const { hasRole } = useAuth();
@@ -167,10 +168,10 @@ export const QrGeneratorPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner & Primary Actions (Hidden in Print) */}
-      <div className="print:hidden flex flex-col md:flex-row md:items-center justify-between gap-4 bg-lp3i-neutral-surface p-5 sm:p-6 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
+      <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-lp3i-neutral-surface p-4 sm:p-6 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg sm:text-xl font-extrabold text-lp3i-blue tracking-tight">
+            <h1 className="text-base sm:text-xl font-extrabold text-lp3i-blue tracking-tight">
               Penerbitan & Cetak Kartu QR Wisuda
             </h1>
             <span className="text-[11px] font-bold text-lp3i-blue bg-lp3i-blue-light px-2.5 py-0.5 rounded-full border border-lp3i-blue-200">
@@ -182,7 +183,7 @@ export const QrGeneratorPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
           {canGenerate && (
             <button
               onClick={() => {
@@ -190,17 +191,17 @@ export const QrGeneratorPage: React.FC = () => {
                 setRegenerateExisting(false);
                 setIsBatchModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex-1 sm:flex-none"
             >
               <Sparkles className="w-4 h-4" />
-              <span>Generate Batch QR Sesi</span>
+              <span>Generate Batch QR</span>
             </button>
           )}
 
           <button
             onClick={() => handlePrint(false)}
             disabled={cards.length === 0}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-lp3i-neutral-50 hover:bg-lp3i-neutral-100 text-lp3i-neutral-900 border border-lp3i-neutral-border text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer"
+            className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-lp3i-neutral-50 hover:bg-lp3i-neutral-100 text-lp3i-neutral-900 border border-lp3i-neutral-border text-xs font-bold rounded-xl shadow-xs transition-colors disabled:opacity-50 cursor-pointer flex-1 sm:flex-none"
           >
             <Printer className="w-4 h-4 text-lp3i-blue" />
             <span>Cetak Semua (A4)</span>
@@ -209,7 +210,7 @@ export const QrGeneratorPage: React.FC = () => {
           {selectedCardIds.length > 0 && (
             <button
               onClick={() => handlePrint(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-lp3i-red hover:bg-lp3i-red-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-lp3i-red hover:bg-lp3i-red-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer w-full sm:w-auto"
             >
               <Printer className="w-4 h-4" />
               <span>Cetak Terpilih ({selectedCardIds.length})</span>
@@ -219,14 +220,14 @@ export const QrGeneratorPage: React.FC = () => {
       </div>
 
       {/* Filter & Selection Control Bar (Hidden in Print) */}
-      <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-lp3i-neutral-surface p-4 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex items-center gap-2 bg-lp3i-neutral-50 px-3 py-1.5 rounded-xl border border-lp3i-neutral-border">
+      <div className="print:hidden flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-lp3i-neutral-surface p-3.5 sm:p-4 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
+        <div className="flex flex-wrap items-center gap-2.5 sm:gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 bg-lp3i-neutral-50 px-3 py-1.5 rounded-xl border border-lp3i-neutral-border flex-1 sm:flex-none">
             <span className="text-xs font-bold text-lp3i-neutral-muted">Sesi:</span>
             <select
               value={selectedSesiId}
               onChange={(e) => setSelectedSesiId(e.target.value)}
-              className="text-xs font-bold bg-transparent text-lp3i-neutral-900 focus:outline-hidden cursor-pointer"
+              className="text-xs font-bold bg-transparent text-lp3i-neutral-900 focus:outline-hidden cursor-pointer w-full sm:w-auto"
             >
               {sessions.map((s) => (
                 <option key={s.id} value={s.id}>
@@ -236,12 +237,12 @@ export const QrGeneratorPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex items-center gap-2 bg-lp3i-neutral-50 px-3 py-1.5 rounded-xl border border-lp3i-neutral-border">
+          <div className="flex items-center gap-2 bg-lp3i-neutral-50 px-3 py-1.5 rounded-xl border border-lp3i-neutral-border flex-1 sm:flex-none">
             <Filter className="w-3.5 h-3.5 text-lp3i-neutral-muted" />
             <select
               value={selectedProdi}
               onChange={(e) => setSelectedProdi(e.target.value)}
-              className="text-xs font-semibold bg-transparent text-lp3i-neutral-900 focus:outline-hidden cursor-pointer"
+              className="text-xs font-semibold bg-transparent text-lp3i-neutral-900 focus:outline-hidden cursor-pointer w-full sm:w-auto"
             >
               <option value="">Semua Program Studi</option>
               {prodiList.map((p) => (
@@ -255,7 +256,7 @@ export const QrGeneratorPage: React.FC = () => {
           {cards.length > 0 && (
             <button
               onClick={selectAll}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-lp3i-neutral-700 bg-lp3i-neutral-50 hover:bg-lp3i-neutral-100 border border-lp3i-neutral-border rounded-xl transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold text-lp3i-neutral-700 bg-lp3i-neutral-50 hover:bg-lp3i-neutral-100 border border-lp3i-neutral-border rounded-xl transition-colors cursor-pointer w-full sm:w-auto"
             >
               {selectedCardIds.length === cards.length ? (
                 <>
@@ -274,7 +275,7 @@ export const QrGeneratorPage: React.FC = () => {
 
         <button
           onClick={fetchCards}
-          className="p-2 text-lp3i-neutral-muted hover:text-lp3i-blue hover:bg-lp3i-blue-light rounded-xl transition-colors border border-lp3i-neutral-border self-end sm:self-auto"
+          className="p-2 text-lp3i-neutral-muted hover:text-lp3i-blue hover:bg-lp3i-blue-light rounded-xl transition-colors border border-lp3i-neutral-border self-end sm:self-auto cursor-pointer"
           title="Segarkan data kartu"
         >
           <RefreshCw className={`w-4 h-4 ${loading ? 'animate-spin text-lp3i-blue' : ''}`} />
@@ -284,10 +285,7 @@ export const QrGeneratorPage: React.FC = () => {
       {/* Cards Presentation Area (Both UI and A4 Print) */}
       <div id="print-area">
         {loading ? (
-          <div className="py-16 text-center text-lp3i-neutral-muted">
-            <div className="w-9 h-9 border-3 border-lp3i-blue border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-            <p className="text-xs font-semibold">Memuat dan merender kartu QR wisudawan...</p>
-          </div>
+          <SkeletonQrCards count={3} />
         ) : cards.length === 0 ? (
           <div className="bg-lp3i-neutral-surface rounded-2xl border border-lp3i-neutral-border p-12 text-center text-lp3i-neutral-muted shadow-subtle">
             <QrCode className="w-12 h-12 mx-auto text-lp3i-neutral-300 mb-2" />

@@ -20,6 +20,7 @@ import { request } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.js';
 import { formatDateTime } from '../utils/format.js';
 import { Modal } from '../components/Modal.js';
+import { SkeletonTable } from '../components/Skeleton.js';
 
 export const RiwayatPage: React.FC = () => {
   const { hasRole } = useAuth();
@@ -179,10 +180,10 @@ export const RiwayatPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-lp3i-neutral-surface p-5 sm:p-6 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-lp3i-neutral-surface p-4 sm:p-6 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg sm:text-xl font-extrabold text-lp3i-blue tracking-tight">
+            <h1 className="text-base sm:text-xl font-extrabold text-lp3i-blue tracking-tight">
               Riwayat & Log Kehadiran Wisudawan
             </h1>
             <span className="text-[11px] font-bold text-lp3i-blue bg-lp3i-blue-light px-2.5 py-0.5 rounded-full border border-lp3i-blue-200">
@@ -196,8 +197,8 @@ export const RiwayatPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-lp3i-neutral-surface p-4 rounded-2xl border border-lp3i-neutral-border shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-md">
+      <div className="bg-lp3i-neutral-surface p-3.5 sm:p-4 rounded-2xl border border-lp3i-neutral-border shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3">
+        <div className="relative flex-1 w-full md:max-w-md">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-lp3i-neutral-muted" />
           <input
             type="text"
@@ -211,14 +212,14 @@ export const RiwayatPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-wrap items-center gap-2 sm:gap-2.5 w-full md:w-auto">
           <select
             value={selectedSesi}
             onChange={(e) => {
               setSelectedSesi(e.target.value);
               setPage(1);
             }}
-            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden"
+            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden flex-1 sm:flex-none"
           >
             <option value="">Semua Sesi Wisuda</option>
             {sessions.map((s) => (
@@ -234,7 +235,7 @@ export const RiwayatPage: React.FC = () => {
               setSelectedStatus(e.target.value);
               setPage(1);
             }}
-            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden"
+            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden flex-1 sm:flex-none"
           >
             <option value="">Semua Status</option>
             <option value="HADIR">Hadir Tepat Waktu</option>
@@ -248,7 +249,7 @@ export const RiwayatPage: React.FC = () => {
               setSelectedMetode(e.target.value);
               setPage(1);
             }}
-            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden"
+            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden flex-1 sm:flex-none"
           >
             <option value="">Semua Metode</option>
             <option value="QR_SCAN">Pemindai QR</option>
@@ -259,8 +260,13 @@ export const RiwayatPage: React.FC = () => {
 
       {/* Table Riwayat Absensi */}
       <div className="bg-lp3i-neutral-surface rounded-2xl border border-lp3i-neutral-border shadow-subtle overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        {/* Mobile Swipe Hint */}
+        <div className="sm:hidden px-4 py-2 bg-lp3i-blue-light/60 text-[11px] text-lp3i-blue font-semibold flex items-center justify-between border-b border-lp3i-neutral-border">
+          <span>Geser tabel ke samping untuk melihat kolom lengkap</span>
+          <span>&rarr;</span>
+        </div>
+        <div className="overflow-x-auto mobile-touch-scroll">
+          <table className="w-full text-left text-xs min-w-[760px]">
             <thead className="bg-lp3i-neutral-50 text-lp3i-neutral-muted font-bold uppercase tracking-wider border-b border-lp3i-neutral-border">
               <tr>
                 <th className="py-3 px-4">Wisudawan</th>
@@ -275,12 +281,7 @@ export const RiwayatPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-lp3i-neutral-border font-medium text-lp3i-neutral-900">
               {loading ? (
-                <tr>
-                  <td colSpan={8} className="py-12 text-center text-lp3i-neutral-muted">
-                    <div className="w-7 h-7 border-2 border-lp3i-blue border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    <span>Memuat catatan kehadiran...</span>
-                  </td>
-                </tr>
+                <SkeletonTable rows={5} columns={8} />
               ) : records.length === 0 ? (
                 <tr>
                   <td colSpan={8} className="py-12 text-center text-lp3i-neutral-muted">

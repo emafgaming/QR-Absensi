@@ -11,7 +11,7 @@
     "db:mode:mysql": "node prisma/switch-db.js mysql && prisma generate",
     "db:mode:postgres": "node prisma/switch-db.js postgres && prisma generate",
     "db:mode:sqlite": "node prisma/switch-db.js sqlite && prisma generate",
-    "prisma:generate": "prisma generate",
+    "prisma:generate": "node prisma/switch-db.js && prisma generate",
     "prisma:push": "prisma db push",
     "prisma:seed": "tsx prisma/seed.ts",
     "test": "vitest run"

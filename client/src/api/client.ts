@@ -1,4 +1,4 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'https://qr-absensi-kvwp.vercel.app/api/v1';
+const API_BASE_URL = import.meta.env.VITE_API_URL || '/api/v1';
 
 export class ApiError extends Error {
   status: number;
@@ -28,14 +28,19 @@ export async function request<T = any>(
 
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
+  // 8-second request timeout to keep UI snappy
+  const controller = new AbortController();
+  const timeoutId = setTimeout(() => controller.abort(), 8000);
+
   try {
     const res = await fetch(url, {
       ...options,
+      signal: options.signal || controller.signal,
       headers,
-    });
+    }).finally(() => clearTimeout(timeoutId));
 
     // Check if token expired
-    if (res.status === 401 && !endpoint.includes('/auth/login')) {
+    if (res.status === 401 && !endpoint.includes('/auth/login') && !endpoint.includes('/auth/me')) {
       localStorage.removeItem('watt_token');
       localStorage.removeItem('watt_user');
       window.location.href = '/login?expired=1';

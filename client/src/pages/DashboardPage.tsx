@@ -16,6 +16,7 @@ import {
 } from 'lucide-react';
 import { request } from '../api/client.js';
 import { formatTime, formatDateTime } from '../utils/format.js';
+import { SkeletonDashboard } from '../components/Skeleton.js';
 
 export const DashboardPage: React.FC = () => {
   const [data, setData] = useState<any>(null);
@@ -58,12 +59,7 @@ export const DashboardPage: React.FC = () => {
   };
 
   if (loading && !data) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[420px] text-lp3i-neutral-muted">
-        <div className="w-10 h-10 border-3 border-lp3i-blue border-t-transparent rounded-full animate-spin mb-3" />
-        <p className="text-xs font-semibold">Memuat data statistik kehadiran wisuda...</p>
-      </div>
-    );
+    return <SkeletonDashboard />;
   }
 
   const summary = data?.summary || {};
@@ -80,10 +76,10 @@ export const DashboardPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner & Session Filter */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-lp3i-neutral-surface p-5 sm:p-6 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-lp3i-neutral-surface p-4 sm:p-6 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg sm:text-xl font-extrabold text-lp3i-blue tracking-tight">
+            <h1 className="text-base sm:text-xl font-extrabold text-lp3i-blue tracking-tight">
               Dashboard Presensi Wisuda
             </h1>
             <span className="hidden sm:inline-flex items-center gap-1 text-[11px] font-semibold text-lp3i-status-success bg-lp3i-status-success-bg px-2.5 py-0.5 rounded-full border border-lp3i-status-success-border">
@@ -96,13 +92,13 @@ export const DashboardPage: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="flex items-center gap-2 bg-lp3i-neutral-50 px-3 py-1.5 rounded-xl border border-lp3i-neutral-border">
-            <Calendar className="w-4 h-4 text-lp3i-neutral-muted" />
+        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto">
+          <div className="flex items-center gap-2 bg-lp3i-neutral-50 px-3 py-1.5 rounded-xl border border-lp3i-neutral-border flex-1 sm:flex-none">
+            <Calendar className="w-4 h-4 text-lp3i-neutral-muted flex-shrink-0" />
             <select
               value={selectedSesi}
               onChange={(e) => setSelectedSesi(e.target.value)}
-              className="text-xs font-bold bg-transparent text-lp3i-neutral-900 focus:outline-hidden cursor-pointer"
+              className="text-xs font-bold bg-transparent text-lp3i-neutral-900 focus:outline-hidden cursor-pointer w-full"
             >
               <option value="">Semua Sesi Wisuda</option>
               {sesiList.map((s: any) => (
@@ -116,7 +112,7 @@ export const DashboardPage: React.FC = () => {
           <button
             onClick={handleRefresh}
             disabled={refreshing}
-            className="p-2 text-lp3i-neutral-muted hover:text-lp3i-blue hover:bg-lp3i-blue-light rounded-xl transition-colors border border-lp3i-neutral-border"
+            className="p-2 text-lp3i-neutral-muted hover:text-lp3i-blue hover:bg-lp3i-blue-light rounded-xl transition-colors border border-lp3i-neutral-border flex-shrink-0 cursor-pointer"
             title="Segarkan Data"
           >
             <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin text-lp3i-blue' : ''}`} />
@@ -132,7 +128,7 @@ export const DashboardPage: React.FC = () => {
       )}
 
       {/* KPI Summary Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         {/* Card 1: Total Wisudawan */}
         <div className="bg-lp3i-neutral-surface p-5 rounded-2xl border border-lp3i-neutral-border shadow-subtle hover:border-lp3i-blue-200 transition-all">
           <div className="flex items-center justify-between">

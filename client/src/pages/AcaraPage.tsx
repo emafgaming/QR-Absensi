@@ -17,6 +17,7 @@ import { request } from '../api/client.js';
 import { formatDate, formatTime } from '../utils/format.js';
 import { Modal } from '../components/Modal.js';
 import { useAuth } from '../context/AuthContext.js';
+import { SkeletonAcara } from '../components/Skeleton.js';
 
 export const AcaraPage: React.FC = () => {
   const { hasRole } = useAuth();
@@ -181,10 +182,7 @@ export const AcaraPage: React.FC = () => {
       {/* Events List */}
       <div className="space-y-6">
         {loading ? (
-          <div className="py-12 text-center text-lp3i-neutral-muted">
-            <div className="w-8 h-8 border-3 border-lp3i-blue border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-            <p className="text-xs font-semibold">Memuat data acara wisuda...</p>
-          </div>
+          <SkeletonAcara />
         ) : events.length === 0 ? (
           <div className="bg-lp3i-neutral-surface rounded-2xl border border-lp3i-neutral-border p-12 text-center text-lp3i-neutral-muted shadow-subtle">
             <CalendarCheck className="w-12 h-12 mx-auto text-lp3i-neutral-300 mb-2" />

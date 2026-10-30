@@ -17,6 +17,7 @@ import { request } from '../api/client.js';
 import { formatDate } from '../utils/format.js';
 import { Modal } from '../components/Modal.js';
 import { useAuth } from '../context/AuthContext.js';
+import { SkeletonTable } from '../components/Skeleton.js';
 
 export const UsersPage: React.FC = () => {
   const { user: currentUser } = useAuth();
@@ -194,8 +195,13 @@ export const UsersPage: React.FC = () => {
 
       {/* Users Table */}
       <div className="bg-lp3i-neutral-surface rounded-2xl border border-lp3i-neutral-border shadow-subtle overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        {/* Mobile Swipe Hint */}
+        <div className="sm:hidden px-4 py-2 bg-lp3i-blue-light/60 text-[11px] text-lp3i-blue font-semibold flex items-center justify-between border-b border-lp3i-neutral-border">
+          <span>Geser tabel ke samping untuk melihat opsi peran & aksi</span>
+          <span>&rarr;</span>
+        </div>
+        <div className="overflow-x-auto mobile-touch-scroll">
+          <table className="w-full text-left text-xs min-w-[640px]">
             <thead className="bg-lp3i-neutral-50 text-lp3i-neutral-muted font-bold uppercase tracking-wider border-b border-lp3i-neutral-border">
               <tr>
                 <th className="py-3 px-4">Pengguna</th>
@@ -208,12 +214,7 @@ export const UsersPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-lp3i-neutral-border font-medium text-lp3i-neutral-900">
               {loading ? (
-                <tr>
-                  <td colSpan={6} className="py-12 text-center text-lp3i-neutral-muted">
-                    <div className="w-7 h-7 border-2 border-lp3i-blue border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    <span>Memuat daftar pengguna...</span>
-                  </td>
-                </tr>
+                <SkeletonTable rows={6} columns={6} />
               ) : users.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="py-12 text-center text-lp3i-neutral-muted">

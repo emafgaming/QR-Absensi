@@ -64,6 +64,43 @@
   animation: laserSweep 2s infinite ease-in-out;
 }
 
+/* Skeleton shimmer animation - optimized for high-speed feel */
+@keyframes shimmerWave {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+.skeleton-shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: #E2E6EE;
+  will-change: transform;
+}
+
+.skeleton-shimmer::after {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: shimmerWave 0.85s infinite cubic-bezier(0.4, 0, 0.2, 1);
+  will-change: transform;
+  content: '';
+}
+
+/* Smooth touch scrolling on mobile */
+.mobile-touch-scroll {
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: thin;
+}
+
 /* Print styling for A4 QR Cards & Reports */
 @media print {
   @page {

@@ -21,6 +21,7 @@ import Papa from 'papaparse';
 import { request } from '../api/client.js';
 import { Modal } from '../components/Modal.js';
 import { useAuth } from '../context/AuthContext.js';
+import { SkeletonTable } from '../components/Skeleton.js';
 
 export const MahasiswaPage: React.FC = () => {
   const { hasRole } = useAuth();
@@ -305,14 +306,14 @@ export const MahasiswaPage: React.FC = () => {
   return (
     <div className="space-y-6">
       {/* Top Banner & Main Actions */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-lp3i-neutral-surface p-5 sm:p-6 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-lp3i-neutral-surface p-4 sm:p-6 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
         <div>
           <div className="flex items-center gap-2">
-            <h1 className="text-lg sm:text-xl font-extrabold text-lp3i-blue tracking-tight">
+            <h1 className="text-base sm:text-xl font-extrabold text-lp3i-blue tracking-tight">
               Master Data Mahasiswa Wisuda
             </h1>
             <span className="text-[11px] font-bold text-lp3i-blue bg-lp3i-blue-light px-2.5 py-0.5 rounded-full border border-lp3i-blue-200">
-              Total: {total} Mahasiswa
+              Total: {total}
             </span>
           </div>
           <p className="text-xs text-lp3i-neutral-muted mt-1">
@@ -321,7 +322,7 @@ export const MahasiswaPage: React.FC = () => {
         </div>
 
         {canEdit && (
-          <div className="flex flex-wrap items-center gap-2.5">
+          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
             <button
               onClick={() => {
                 setCsvFile(null);
@@ -330,15 +331,15 @@ export const MahasiswaPage: React.FC = () => {
                 setImportError(null);
                 setIsImportModalOpen(true);
               }}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-lp3i-neutral-50 hover:bg-lp3i-neutral-100 text-lp3i-neutral-900 border border-lp3i-neutral-border text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-lp3i-neutral-50 hover:bg-lp3i-neutral-100 text-lp3i-neutral-900 border border-lp3i-neutral-border text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex-1 sm:flex-none"
             >
               <Upload className="w-4 h-4 text-lp3i-blue" />
-              <span>Impor CSV Massal</span>
+              <span>Impor CSV</span>
             </button>
 
             <button
               onClick={openCreateModal}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+              className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex-1 sm:flex-none"
             >
               <UserPlus className="w-4 h-4" />
               <span>Tambah Mahasiswa</span>
@@ -348,8 +349,8 @@ export const MahasiswaPage: React.FC = () => {
       </div>
 
       {/* Filter and Search Bar */}
-      <div className="bg-lp3i-neutral-surface p-4 rounded-2xl border border-lp3i-neutral-border shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-3">
-        <div className="relative flex-1 max-w-md">
+      <div className="bg-lp3i-neutral-surface p-3.5 sm:p-4 rounded-2xl border border-lp3i-neutral-border shadow-subtle flex flex-col md:flex-row md:items-center justify-between gap-2.5 sm:gap-3">
+        <div className="relative flex-1 w-full md:max-w-md">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-lp3i-neutral-muted" />
           <input
             type="text"
@@ -363,14 +364,14 @@ export const MahasiswaPage: React.FC = () => {
           />
         </div>
 
-        <div className="flex flex-wrap items-center gap-2.5">
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full md:w-auto">
           <select
             value={selectedProdi}
             onChange={(e) => {
               setSelectedProdi(e.target.value);
               setPage(1);
             }}
-            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden"
+            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden w-full sm:w-auto"
           >
             <option value="">Semua Program Studi</option>
             {prodiOptions.map((p) => (
@@ -386,7 +387,7 @@ export const MahasiswaPage: React.FC = () => {
               setSelectedStatus(e.target.value);
               setPage(1);
             }}
-            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden"
+            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden w-full sm:w-auto"
           >
             <option value="">Semua Status Kelayakan</option>
             <option value="ELIGIBLE">Layak (Eligible)</option>
@@ -397,8 +398,13 @@ export const MahasiswaPage: React.FC = () => {
 
       {/* Table Data Mahasiswa */}
       <div className="bg-lp3i-neutral-surface rounded-2xl border border-lp3i-neutral-border shadow-subtle overflow-hidden">
-        <div className="overflow-x-auto">
-          <table className="w-full text-left text-xs">
+        {/* Mobile Swipe Hint */}
+        <div className="sm:hidden px-4 py-2 bg-lp3i-blue-light/60 text-[11px] text-lp3i-blue font-semibold flex items-center justify-between border-b border-lp3i-neutral-border">
+          <span>Geser tabel ke samping untuk melihat kolom lengkap</span>
+          <span>&rarr;</span>
+        </div>
+        <div className="overflow-x-auto mobile-touch-scroll">
+          <table className="w-full text-left text-xs min-w-[700px]">
             <thead className="bg-lp3i-neutral-50 text-lp3i-neutral-muted font-bold uppercase tracking-wider border-b border-lp3i-neutral-border">
               <tr>
                 <th className="py-3 px-4">NIM</th>
@@ -412,12 +418,7 @@ export const MahasiswaPage: React.FC = () => {
             </thead>
             <tbody className="divide-y divide-lp3i-neutral-border font-medium text-lp3i-neutral-900">
               {loading ? (
-                <tr>
-                  <td colSpan={canEdit ? 7 : 6} className="py-12 text-center text-lp3i-neutral-muted">
-                    <div className="w-7 h-7 border-2 border-lp3i-blue border-t-transparent rounded-full animate-spin mx-auto mb-2" />
-                    <span>Memuat data mahasiswa...</span>
-                  </td>
-                </tr>
+                <SkeletonTable rows={5} columns={canEdit ? 7 : 6} />
               ) : mahasiswaList.length === 0 ? (
                 <tr>
                   <td colSpan={canEdit ? 7 : 6} className="py-12 text-center text-lp3i-neutral-muted">

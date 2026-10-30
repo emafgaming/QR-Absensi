@@ -46,13 +46,8 @@ export const LoginPage: React.FC = () => {
     }
   };
 
-  const handleQuickLogin = (u: string, p: string) => {
-    setUsername(u);
-    setPassword(p);
-  };
-
   return (
-    <div className="min-h-screen bg-lp3i-blue-900 flex flex-col justify-center py-12 px-4 sm:px-6 lg:px-8 text-white relative overflow-hidden">
+    <div className="min-h-screen bg-lp3i-blue-900 flex flex-col justify-center py-8 sm:py-12 px-4 sm:px-6 lg:px-8 text-white relative overflow-hidden">
       {/* Background Decorative Accents */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-lp3i-blue-700/20 rounded-full blur-3xl pointer-events-none" />
       <div className="absolute bottom-0 left-0 w-96 h-96 bg-lp3i-red/10 rounded-full blur-3xl pointer-events-none" />
@@ -142,47 +137,6 @@ export const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
-
-          {/* Quick Demo Access Buttons */}
-          <div className="mt-6 pt-5 border-t border-lp3i-neutral-border">
-            <p className="text-[11px] font-bold text-lp3i-neutral-muted uppercase tracking-wider text-center mb-3">
-              Akses Cepat Pengujian (Seed Data)
-            </p>
-            <div className="grid grid-cols-2 gap-2 text-xs">
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('superadmin', 'Wisuda2026!')}
-                className="p-2 rounded-xl bg-lp3i-neutral-50 hover:bg-lp3i-blue-light hover:text-lp3i-blue border border-lp3i-neutral-border text-left transition-colors cursor-pointer"
-              >
-                <p className="font-bold text-[11px]">Superadmin</p>
-                <p className="text-[10px] text-lp3i-neutral-muted">superadmin</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('adminpanitia', 'Wisuda2026!')}
-                className="p-2 rounded-xl bg-lp3i-neutral-50 hover:bg-lp3i-blue-light hover:text-lp3i-blue border border-lp3i-neutral-border text-left transition-colors cursor-pointer"
-              >
-                <p className="font-bold text-[11px]">Admin Panitia</p>
-                <p className="text-[10px] text-lp3i-neutral-muted">adminpanitia</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('petugas1', 'Wisuda2026!')}
-                className="p-2 rounded-xl bg-lp3i-neutral-50 hover:bg-lp3i-blue-light hover:text-lp3i-blue border border-lp3i-neutral-border text-left transition-colors cursor-pointer"
-              >
-                <p className="font-bold text-[11px]">Petugas Pintu</p>
-                <p className="text-[10px] text-lp3i-neutral-muted">petugas1 (Langsung Scan)</p>
-              </button>
-              <button
-                type="button"
-                onClick={() => handleQuickLogin('viewer', 'Wisuda2026!')}
-                className="p-2 rounded-xl bg-lp3i-neutral-50 hover:bg-lp3i-blue-light hover:text-lp3i-blue border border-lp3i-neutral-border text-left transition-colors cursor-pointer"
-              >
-                <p className="font-bold text-[11px]">Viewer</p>
-                <p className="text-[10px] text-lp3i-neutral-muted">viewer (Read-only)</p>
-              </button>
-            </div>
-          </div>
         </div>
 
         <p className="mt-4 text-center text-[11px] text-lp3i-blue-200">

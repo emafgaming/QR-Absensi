@@ -5,7 +5,14 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-const mode = (process.argv[2] || 'mysql').toLowerCase();
+let mode = (process.argv[2] || '').toLowerCase();
+if (!mode) {
+  const dbUrl = process.env.DATABASE_URL || '';
+  if (dbUrl.startsWith('postgres')) mode = 'postgres';
+  else if (dbUrl.startsWith('mysql')) mode = 'mysql';
+  else if (dbUrl.startsWith('file:') || dbUrl.startsWith('sqlite:')) mode = 'sqlite';
+  else mode = 'postgres';
+}
 console.log(`Setting database mode to: ${mode}`);
 
 const schemas = {

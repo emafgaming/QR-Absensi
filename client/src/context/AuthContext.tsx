@@ -44,11 +44,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
             setUser(res.data);
             localStorage.setItem('watt_user', JSON.stringify(res.data));
           }
-        } catch (e) {
-          localStorage.removeItem('watt_token');
-          localStorage.removeItem('watt_user');
-          setUser(null);
-          setToken(null);
+        } catch (e: any) {
+          // Only invalidate local credentials if the token is explicitly rejected (401)
+          if (e?.status === 401) {
+            localStorage.removeItem('watt_token');
+            localStorage.removeItem('watt_user');
+            setUser(null);
+            setToken(null);
+          }
         }
       }
       setLoading(false);

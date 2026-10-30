@@ -29,7 +29,7 @@ export const Layout: React.FC = () => {
           onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
           pageTitle={getPageTitle(location.pathname)}
         />
-        <main className="flex-1 p-4 sm:p-6 lg:p-8">
+        <main className="flex-1 p-3 sm:p-6 lg:p-8">
           <Outlet />
         </main>
       </div>

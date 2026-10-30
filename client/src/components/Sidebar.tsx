@@ -13,6 +13,7 @@ import {
   GraduationCap,
   ChevronRight,
   LogOut,
+  X,
 } from 'lucide-react';
 import { useAuth, Role } from '../context/AuthContext.js';
 
@@ -112,18 +113,27 @@ export const Sidebar: React.FC<SidebarProps> = ({ isOpen, onClose }) => {
         }`}
       >
         {/* Institutional Brand Header */}
-        <div className="h-20 flex items-center px-6 gap-3 border-b border-lp3i-blue-700/80 bg-lp3i-blue-900">
-          <div className="w-11 h-11 rounded-xl bg-lp3i-blue flex items-center justify-center text-white border border-lp3i-blue-200/20 shadow-md">
-            <GraduationCap className="w-6 h-6 text-white" />
+        <div className="h-20 flex items-center justify-between px-6 border-b border-lp3i-blue-700/80 bg-lp3i-blue-900">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-xl bg-lp3i-blue flex items-center justify-center text-white border border-lp3i-blue-200/20 shadow-md flex-shrink-0">
+              <GraduationCap className="w-6 h-6 text-white" />
+            </div>
+            <div className="min-w-0">
+              <h1 className="font-extrabold text-lg text-white tracking-tight flex items-center gap-1">
+                Wisuda<span className="text-lp3i-red">Attend</span>
+              </h1>
+              <p className="text-[11px] text-lp3i-blue-200 font-medium tracking-wide truncate">
+                Sistem Presensi Terpadu
+              </p>
+            </div>
           </div>
-          <div className="min-w-0">
-            <h1 className="font-extrabold text-lg text-white tracking-tight flex items-center gap-1">
-              Wisuda<span className="text-lp3i-red">Attend</span>
-            </h1>
-            <p className="text-[11px] text-lp3i-blue-200 font-medium tracking-wide">
-              Sistem Presensi Terpadu
-            </p>
-          </div>
+          <button
+            onClick={onClose}
+            className="p-2 -mr-2 rounded-xl text-lp3i-blue-200 hover:text-white hover:bg-lp3i-blue-700 lg:hidden transition-colors"
+            aria-label="Tutup Menu"
+          >
+            <X className="w-5 h-5" />
+          </button>
         </div>
 
         {/* User Role Card */}
