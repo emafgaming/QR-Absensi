@@ -43,7 +43,7 @@
 
 - **Frontend:** React 18, TypeScript, Vite, Tailwind CSS, Lucide Icons, html5-qrcode, PapaParse.
 - **Backend:** Node.js, Express, TypeScript, Zod, Helmet, Morgan, Express Rate Limit, JWT, Bcrypt.
-- **Database & ORM:** PostgreSQL + Prisma ORM (dilengkapi skrip switcher SQLite untuk pengujian lokal zero-setup).
+- **Database & ORM:** MySQL / MariaDB (kompatibel Domainesia cPanel) & PostgreSQL + Prisma ORM (dilengkapi skrip switcher SQLite/MySQL/PostgreSQL).
 - **Pengujian:** Vitest, Supertest.
 
 ---

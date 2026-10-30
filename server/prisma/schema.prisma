@@ -1,10 +1,10 @@
-// Prisma schema for WisudaAttend (SQLite mode for local dev/testing)
+// Prisma schema for WisudaAttend (PostgreSQL Mode)
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -14,7 +14,7 @@ model User {
   nama          String
   email         String     @unique
   password_hash String
-  role          String     @default("PETUGAS") // SUPERADMIN, ADMIN_PANITIA, PETUGAS, VIEWER
+  role          String     @default("PETUGAS")
   is_active     Boolean    @default(true)
   created_at    DateTime   @default(now())
   updated_at    DateTime   @updatedAt
@@ -32,7 +32,7 @@ model Mahasiswa {
   prodi            String
   fakultas         String
   angkatan         String
-  status_kelayakan String     @default("ELIGIBLE") // ELIGIBLE, NOT_ELIGIBLE
+  status_kelayakan String     @default("ELIGIBLE")
   email            String?
   no_hp            String?
   created_at       DateTime   @default(now())
@@ -87,7 +87,7 @@ model QrCode {
   sesi_id      String
   sesi         SesiWisuda  @relation(fields: [sesi_id], references: [id], onDelete: Cascade)
   token        String      @unique
-  status       String      @default("ACTIVE") // ACTIVE, REVOKED, EXPIRED
+  status       String      @default("ACTIVE")
   generated_at DateTime    @default(now())
   revoked_at   DateTime?
 
@@ -108,14 +108,13 @@ model Absensi {
   qr_code       QrCode?     @relation(fields: [qr_code_id], references: [id], onDelete: SetNull)
   scanned_by_id String?
   scanned_by    User?       @relation(fields: [scanned_by_id], references: [id], onDelete: SetNull)
-  status        String      @default("HADIR") // HADIR, TERLAMBAT, IZIN, KOREKSI
-  waktu_absen   DateTime    @default(now()) // Timestamp generated strictly on server
-  metode        String      @default("QR_SCAN") // QR_SCAN, MANUAL
+  status        String      @default("HADIR")
+  waktu_absen   DateTime    @default(now())
+  metode        String      @default("QR_SCAN")
   catatan       String?
   created_at    DateTime    @default(now())
   updated_at    DateTime    @updatedAt
 
-  // Strict double-attendance prevention at DB level
   @@unique([mahasiswa_id, sesi_id])
   @@index([sesi_id])
   @@index([mahasiswa_id])
@@ -126,8 +125,8 @@ model AuditLog {
   id         String   @id @default(cuid())
   user_id    String?
   user       User?    @relation(fields: [user_id], references: [id], onDelete: SetNull)
-  action     String   // LOGIN, LOGOUT, CREATE, UPDATE, DELETE, QR_GENERATE, QR_REVOKE, SCAN_SUCCESS, SCAN_DUPLICATE, ATTENDANCE_CORRECT, CSV_IMPORT
-  entity     String   // Mahasiswa, SesiWisuda, Absensi, QrCode, User, System
+  action     String
+  entity     String
   entity_id  String?
   old_value  String?
   new_value  String?

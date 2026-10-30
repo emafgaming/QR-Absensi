@@ -4,7 +4,44 @@ Dokumen ini menjelaskan prosedur penerapan (*deployment*) produksi berstandar ke
 
 ---
 
-## 1. Arsitektur Deployment Produksi
+## 🌟 Panduan Khusus Deployment di Domainesia (cPanel / Cloud Hosting)
+
+Bila Anda mendeploy di hosting Domainesia (menggunakan fitur **Setup Node.js App** dan **MySQL/phpMyAdmin** di cPanel):
+
+### 1. Buat Database & User MySQL di cPanel
+1. Masuk ke **cPanel Domainesia**.
+2. Buka menu **MySQL Database Wizard**.
+3. Buat database baru (misal: `u1234567_wisudadb`).
+4. Buat user database baru beserta password yang kuat (misal: `u1234567_wisuda`).
+5. Centang **ALL PRIVILEGES** pada user tersebut untuk database yang dibuat.
+
+### 2. Import Struktur Database & Data Awal via phpMyAdmin
+1. Buka menu **phpMyAdmin** di cPanel.
+2. Klik nama database yang baru dibuat di panel sebelah kiri.
+3. Klik tab **Import** di bagian atas.
+4. Pilih file [`wisudaattend_mysql.sql`](file:///D:/Project%20Absen/wisudaattend_mysql.sql) yang sudah disediakan di root project.
+5. Klik **Go / Kirim**. Seluruh tabel (`users`, `mahasiswa`, `events`, `sesi_wisuda`, `qr_codes`, `absensi`, `audit_logs`) dan akun default akan langsung terbuat!
+
+### 3. Setup Node.js App di cPanel
+1. Masuk ke menu **Setup Node.js App** di cPanel Domainesia.
+2. Klik **Create Application**:
+   - **Node.js version:** Pilih 18.x atau 20.x LTS.
+   - **Application mode:** `Production`
+   - **Application root:** misal `apps/wisuda-api`
+   - **Application URL:** subdomain API Anda, misal `api.domainanda.com`
+   - **Application startup file:** `dist/server.js`
+3. Upload seluruh file folder `server/` (setelah di-build `npm run build`) ke direktori root aplikasi tersebut.
+4. Pada bagian **Environment variables**, tambahkan:
+   - `PORT` = `5000` (atau port yang ditentukan cPanel)
+   - `NODE_ENV` = `production`
+   - `JWT_SECRET` = (string rahasia acak yang panjang)
+   - `CORS_ORIGIN` = `https://domainanda.com`
+   - `DATABASE_URL` = `mysql://u1234567_wisuda:PasswordAnda@localhost:3306/u1234567_wisudadb`
+5. Jalankan `npm install --production` dan jalankan app.
+
+---
+
+## 1. Arsitektur Deployment Produksi VPS / Dedicated Server
 
 ```
 [ Klien / Browser Petugas ]

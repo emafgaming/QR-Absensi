@@ -2,6 +2,7 @@
   "name": "wisudaattend-monorepo",
   "version": "1.0.0",
   "private": true,
+  "type": "module",
   "workspaces": [
     "server",
     "client"
@@ -11,7 +12,8 @@
     "dev:client": "npm --prefix client run dev",
     "build:server": "npm --prefix server run build",
     "build:client": "npm --prefix client run build",
-    "build": "npm run build:server && npm run build:client",
+    "build": "npm --prefix server run prisma:generate && npm run build:server && npm run build:client",
+    "vercel-build": "npm run build",
     "test:server": "npm --prefix server run test",
     "prisma:generate": "npm --prefix server run prisma:generate",
     "prisma:push": "npm --prefix server run prisma:push",

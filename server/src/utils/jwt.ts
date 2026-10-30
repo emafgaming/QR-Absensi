@@ -1,7 +1,7 @@
 import jwt from 'jsonwebtoken';
 import { AuthUser } from '../types/index.js';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'wisuda-default-secret-key-change-in-prod';
+const JWT_SECRET = process.env.JWT_SECRET || process.env.STUDENT_SESSION_SECRET || 'wisuda-default-secret-key-change-in-prod';
 const JWT_EXPIRES_IN = '12h';
 
 export function generateToken(user: AuthUser): string {
