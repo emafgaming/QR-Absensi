@@ -27,37 +27,16 @@ app.use(
   })
 );
 
-// CORS configuration
-const rawOrigins = [
-  process.env.CORS_ORIGIN,
-  process.env.APP_URL,
-  process.env.VERCEL_URL ? `https://${process.env.VERCEL_URL}` : '',
-  'http://localhost:5173',
-]
-  .filter(Boolean)
-  .join(',');
-
-const allowedOrigins = rawOrigins
-  .split(',')
-  .map(origin => origin.trim())
-  .filter(Boolean);
-
+// CORS configuration: Allow custom domains (qrabsensi.my.id), *.vercel.app, localhost, and API tools
 app.use(
   cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps, curl, server-to-server)
-      if (!origin) return callback(null, true);
-      if (
-        allowedOrigins.indexOf(origin) !== -1 ||
-        origin.endsWith('.vercel.app') ||
-        process.env.NODE_ENV !== 'production'
-      ) {
-        callback(null, true);
-      } else {
-        callback(new Error('CORS not allowed'));
-      }
+      // Allow requests from any origin (reflection allows credentials with custom domains)
+      callback(null, true);
     },
     credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept', 'Origin'],
   })
 );
 
