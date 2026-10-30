@@ -8,6 +8,14 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
+// Restore originalUrl if Vercel serverless rewrite mutated req.url
+app.use((req, res, next) => {
+  if (req.originalUrl && req.url !== req.originalUrl) {
+    req.url = req.originalUrl;
+  }
+  next();
+});
+
 // Security Headers (safely handle CommonJS / ESM dual export)
 const helmetMiddleware = ((typeof helmet === 'function' ? helmet : (helmet as any).default) || helmet) as any;
 app.use(
