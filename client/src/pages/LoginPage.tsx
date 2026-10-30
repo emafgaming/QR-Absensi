@@ -137,6 +137,27 @@ export const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
+
+          {/* Akun Petugas / Admin Default */}
+          <div className="mt-5 pt-4 border-t border-lp3i-neutral-border">
+            <div className="p-3 bg-lp3i-neutral-50 rounded-xl border border-lp3i-neutral-border flex items-center justify-between gap-2">
+              <div className="text-left">
+                <p className="text-[11px] font-bold text-lp3i-neutral-900">Akun Superadmin:</p>
+                <p className="text-[10px] text-lp3i-neutral-muted">User: <span className="font-mono font-semibold text-lp3i-blue">superadmin</span> • Pass: <span className="font-mono font-semibold text-lp3i-blue">Wisuda2026!</span></p>
+              </div>
+              <button
+                type="button"
+                onClick={() => {
+                  setUsername('superadmin');
+                  setPassword('Wisuda2026!');
+                  setError(null);
+                }}
+                className="px-2.5 py-1.5 bg-lp3i-blue/10 hover:bg-lp3i-blue hover:text-white text-lp3i-blue text-[11px] font-bold rounded-lg transition-colors cursor-pointer whitespace-nowrap"
+              >
+                Isi Otomatis
+              </button>
+            </div>
+          </div>
         </div>
 
         <p className="mt-4 text-center text-[11px] text-lp3i-blue-200">
