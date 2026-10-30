@@ -8,9 +8,10 @@ import { errorHandler } from './middleware/errorHandler.js';
 
 const app = express();
 
-// Security Headers
+// Security Headers (safely handle CommonJS / ESM dual export)
+const helmetMiddleware = ((typeof helmet === 'function' ? helmet : (helmet as any).default) || helmet) as any;
 app.use(
-  helmet({
+  helmetMiddleware({
     crossOriginResourcePolicy: { policy: 'cross-origin' },
   })
 );
@@ -59,7 +60,8 @@ app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 // Rate limiting for auth and scanner
-const authLimiter = rateLimit({
+const rateLimitMiddleware = ((typeof rateLimit === 'function' ? rateLimit : (rateLimit as any).default) || rateLimit) as any;
+const authLimiter = rateLimitMiddleware({
   windowMs: 15 * 60 * 1000, // 15 minutes
   max: 100, // 100 attempts per 15 min
   message: {
