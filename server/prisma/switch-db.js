@@ -18,7 +18,8 @@ console.log(`Setting database mode to: ${mode}`);
 const schemas = {
   mysql: `// Prisma schema for WisudaAttend (MySQL Mode - Production/Domainesia/Local MySQL)
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -164,7 +165,8 @@ model AuditLog {
 `,
   postgres: `// Prisma schema for WisudaAttend (PostgreSQL Mode)
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -305,7 +307,8 @@ model AuditLog {
 `,
   sqlite: `// Prisma schema for WisudaAttend (SQLite Mode)
 generator client {
-  provider = "prisma-client-js"
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "rhel-openssl-1.0.x", "rhel-openssl-3.0.x"]
 }
 
 datasource db {
@@ -453,3 +456,4 @@ if (!schemas[mode]) {
 
 fs.writeFileSync(path.join(__dirname, 'schema.prisma'), schemas[mode]);
 console.log(`Prisma schema successfully updated to ${mode.toUpperCase()} mode.`);
+
