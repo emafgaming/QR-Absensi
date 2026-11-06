@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth, Role } from './context/AuthContext.js';
 import { Layout } from './components/Layout.js';
 import { LoginPage } from './pages/LoginPage.js';
+import { WisudaPresencePage } from './pages/WisudaPresencePage.js';
 import { DashboardPage } from './pages/DashboardPage.js';
 import { ScanPage } from './pages/ScanPage.js';
 import { MahasiswaPage } from './pages/MahasiswaPage.js';
@@ -34,7 +35,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, allowedRoles 
   }
 
   if (allowedRoles && !hasRole(allowedRoles)) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <>{children}</>;
@@ -45,6 +46,12 @@ export const App: React.FC = () => {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
+          {/* Public Wisuda Presence Live Monitor (No Login Required) */}
+          <Route path="/" element={<WisudaPresencePage />} />
+          <Route path="/presence" element={<WisudaPresencePage />} />
+          <Route path="/monitor" element={<WisudaPresencePage />} />
+
+          {/* Internal Authentication */}
           <Route path="/login" element={<LoginPage />} />
 
           {/* Protected Routes inside Admin Shell */}
@@ -55,7 +62,8 @@ export const App: React.FC = () => {
               </ProtectedRoute>
             }
           >
-            <Route index element={<DashboardPage />} />
+            <Route path="dashboard" element={<DashboardPage />} />
+            <Route path="admin" element={<Navigate to="/dashboard" replace />} />
             <Route
               path="scan"
               element={

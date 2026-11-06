@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
 import app from '../src/app.js';
 import prisma from '../src/prisma.js';
@@ -38,30 +38,99 @@ describe('WisudaAttend API Integration Tests', () => {
     expect(viewLogin.status).toBe(200);
     viewerToken = viewLogin.body.data.token;
 
-    // 4. Retrieve Active Session
-    const sesi = await prisma.sesiWisuda.findFirst({
+    // 4. Retrieve or Create Active Session
+    let sesi = await prisma.sesiWisuda.findFirst({
       where: { is_open: true },
     });
+    if (!sesi) {
+      let event = await prisma.event.findFirst();
+      if (!event) {
+        event = await prisma.event.create({
+          data: {
+            nama_event: 'Wisuda Akbar 2026',
+            tanggal: new Date(),
+            lokasi: 'Auditorium Utama LP3I',
+            is_active: true,
+          },
+        });
+      }
+      sesi = await prisma.sesiWisuda.create({
+        data: {
+          event_id: event.id,
+          nama_sesi: 'Sesi Pagi - Wisuda 2026',
+          waktu_mulai: new Date(),
+          waktu_selesai: new Date(Date.now() + 14400000),
+          is_open: true,
+        },
+      });
+    }
     expect(sesi).toBeTruthy();
     activeSessionId = sesi!.id;
 
-    // 5. Retrieve an eligible student who has NOT attended yet
-    const student = await prisma.mahasiswa.findFirst({
+    // 5. Retrieve or Create an eligible student who has NOT attended yet
+    let student = await prisma.mahasiswa.findFirst({
       where: {
         status_kelayakan: 'ELIGIBLE',
-        nim: { not: '202201001' }, // Ahmad Faiz already attended
       },
       include: { qr_codes: true },
     });
+    if (!student) {
+      student = await prisma.mahasiswa.create({
+        data: {
+          nim: '202522001',
+          nama: 'Ezzar Muhammad Akbar Firdaus',
+          prodi: 'Manajemen Informatika',
+          fakultas: '-',
+          angkatan: '2025',
+          status_kelayakan: 'ELIGIBLE',
+        },
+        include: { qr_codes: true },
+      });
+    }
+    if (student.qr_codes.length === 0) {
+      const qr = await prisma.qrCode.create({
+        data: {
+          mahasiswa_id: student.id,
+          sesi_id: activeSessionId,
+          token: `WATT-TEST-${Date.now()}`,
+          status: 'ACTIVE',
+        },
+      });
+      student.qr_codes = [qr];
+    }
     expect(student).toBeTruthy();
     eligibleStudentNim = student!.nim;
     validQrToken = student!.qr_codes[0]?.token;
 
-    // 6. Retrieve ineligible student
-    const ineligible = await prisma.mahasiswa.findFirst({
+    // 6. Retrieve or Create ineligible student
+    let ineligible = await prisma.mahasiswa.findFirst({
       where: { status_kelayakan: 'NOT_ELIGIBLE' },
       include: { qr_codes: true },
     });
+    if (!ineligible) {
+      ineligible = await prisma.mahasiswa.create({
+        data: {
+          nim: 'TEST_NOT_ELIGIBLE_99',
+          nama: 'Mahasiswa Belum Layak',
+          prodi: 'Hubungan Masyarakat',
+          fakultas: '-',
+          angkatan: '2025',
+          status_kelayakan: 'NOT_ELIGIBLE',
+        },
+        include: { qr_codes: true },
+      });
+    }
+    if (ineligible.qr_codes.length === 0) {
+      const qr = await prisma.qrCode.create({
+        data: {
+          mahasiswa_id: ineligible.id,
+          sesi_id: activeSessionId,
+          token: `WATT-INELIGIBLE-${Date.now()}`,
+          status: 'ACTIVE',
+        },
+      });
+      ineligible.qr_codes = [qr];
+    }
     expect(ineligible).toBeTruthy();
     ineligibleStudentNim = ineligible!.nim;
   });
@@ -283,6 +352,97 @@ describe('WisudaAttend API Integration Tests', () => {
       expect(res.status).toBe(400);
       expect(res.body.success).toBe(false);
       expect(res.body.message).toContain('riwayat presensi');
+    });
+  });
+
+  describe('Data Mahasiswa 4-Prodi & Non-Destructive Fields', () => {
+    it('accepts student creation with valid LP3I program studi (e.g. Komputerisasi Akuntansi)', async () => {
+      const testNim = `TEST-MHS-${Date.now().toString().slice(-6)}`;
+      const res = await request(app)
+        .post('/api/v1/mahasiswa')
+        .set('Authorization', `Bearer ${superadminToken}`)
+        .send({
+          nim: testNim,
+          nama: 'Budi LP3I Testing',
+          prodi: 'Komputerisasi Akuntansi',
+        });
+
+      expect(res.status).toBe(201);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.prodi).toBe('Komputerisasi Akuntansi');
+      expect(res.body.data.fakultas).toBe('-'); // Defaults safely
+      expect(res.body.data.status_kelayakan).toBe('ELIGIBLE'); // Defaults safely
+    });
+
+    it('rejects student creation with invalid/unauthorized program studi', async () => {
+      const testNim = `TEST-MHS-FAIL-${Date.now().toString().slice(-4)}`;
+      const res = await request(app)
+        .post('/api/v1/mahasiswa')
+        .set('Authorization', `Bearer ${superadminToken}`)
+        .send({
+          nim: testNim,
+          nama: 'Siswa Prodi Tidak Valid',
+          prodi: 'Teknik Penerbangan', // Invalid!
+        });
+
+      expect(res.status).toBe(400);
+      expect(res.body.success).toBe(false);
+    });
+
+    it('exports mahasiswa list to CSV with proper columns and no fakultas/status kelayakan', async () => {
+      const res = await request(app)
+        .get('/api/v1/mahasiswa/export-csv')
+        .set('Authorization', `Bearer ${superadminToken}`);
+
+      expect(res.status).toBe(200);
+      expect(res.header['content-type']).toContain('text/csv');
+      expect(res.text).toContain('NIM');
+      expect(res.text).toContain('Nama Mahasiswa');
+      expect(res.text).toContain('Program Studi');
+    });
+  });
+
+  describe('Public Live Presence Monitor (No Login Required)', () => {
+    it('allows public read of /public/presence/info without any token', async () => {
+      const res = await request(app).get('/api/v1/public/presence/info');
+
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(res.body.data.session).toBeDefined();
+      expect(res.body.data.stats).toBeDefined();
+      expect(res.body.data.stats.total_mahasiswa).toBeGreaterThanOrEqual(0);
+      expect(res.body.data.stats.total_hadir).toBeGreaterThanOrEqual(0);
+      expect(Array.isArray(res.body.data.recent_attendance)).toBe(true);
+
+      // Verify privacy masking: raw NIM must never be returned on public endpoint
+      if (res.body.data.recent_attendance.length > 0) {
+        const item = res.body.data.recent_attendance[0];
+        expect(item.nim_masked).toBeDefined();
+        expect(item.nim_masked).toContain('•');
+        expect(item.nim).toBeUndefined(); // Raw NIM must not leak
+        expect(item.token).toBeUndefined(); // Token must not leak
+      }
+    });
+
+    it('allows public feed polling via /public/presence/feed without auth', async () => {
+      const res = await request(app).get('/api/v1/public/presence/feed');
+      expect(res.status).toBe(200);
+      expect(res.body.success).toBe(true);
+      expect(Array.isArray(res.body.data)).toBe(true);
+    });
+  });
+
+  afterAll(async () => {
+    // Clean up temporary test students
+    await prisma.mahasiswa.deleteMany({
+      where: {
+        OR: [
+          { nim: { startsWith: 'TEST-' } },
+          { nim: { startsWith: 'TEST_' } },
+          { nim: { startsWith: 'NIM-' } },
+          { nim: { startsWith: 'FAIL-' } },
+        ],
+      },
     });
   });
 });

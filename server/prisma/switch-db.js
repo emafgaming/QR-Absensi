@@ -7,11 +7,18 @@ const __dirname = path.dirname(__filename);
 
 let mode = (process.argv[2] || '').toLowerCase();
 if (!mode) {
-  const dbUrl = process.env.DATABASE_URL || '';
+  let dbUrl = process.env.DATABASE_URL || '';
+  if (!dbUrl) {
+    const envPath = path.resolve(__dirname, '../.env');
+    if (fs.existsSync(envPath)) {
+      const match = fs.readFileSync(envPath, 'utf8').match(/DATABASE_URL=["']?([^"'\r\n]+)/);
+      if (match) dbUrl = match[1];
+    }
+  }
   if (dbUrl.startsWith('postgres')) mode = 'postgres';
   else if (dbUrl.startsWith('mysql')) mode = 'mysql';
   else if (dbUrl.startsWith('file:') || dbUrl.startsWith('sqlite:')) mode = 'sqlite';
-  else mode = 'postgres';
+  else mode = 'sqlite';
 }
 console.log(`Setting database mode to: ${mode}`);
 

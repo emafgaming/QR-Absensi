@@ -1,0 +1,772 @@
+[
+  {
+    "nim": "202421037",
+    "nama": "HAFIFAH SALSABILA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.89,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421036",
+    "nama": "FEMIL AZZURANI SAEL",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.88,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421031",
+    "nama": "WINDI",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.61,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421040",
+    "nama": "LIDIANA ANGLE WENDY HUTAHAEAN",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.57,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421045",
+    "nama": "RESKI PADILA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.56,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421033",
+    "nama": "AMELIA SANTOSO",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.52,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421039",
+    "nama": "INDAH ULI ZEGA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.5,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421035",
+    "nama": "DINI WULANDARI",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.49,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421044",
+    "nama": "RENO SUGITNO",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.49,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421008",
+    "nama": "MELANI DWI PUSPITASARI",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.44,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421053",
+    "nama": "RANDI KURNIAWAN",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.43,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421034",
+    "nama": "ASRI DHEA NATALIA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.41,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421046",
+    "nama": "TRI APRILIA SETYO WARDANI",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.31,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421014",
+    "nama": "NURJULIANA EKA WAHYUNI",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.23,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421032",
+    "nama": "AFNA NUR AZIZAH",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.22,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421010",
+    "nama": "MURSYIDA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.18,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421002",
+    "nama": "FAULINA DELFITA SARI",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.17,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421017",
+    "nama": "RYAN DAUD PERLINDUNGAN PANJAITAN",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.15,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421021",
+    "nama": "GADIS AMELIA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.15,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421041",
+    "nama": "NADELA PUTRI PRATAMA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.15,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421054",
+    "nama": "NAZWA NURKAMILATU' SADIYYAH",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.14,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421009",
+    "nama": "MELODY SABILA SUWANDI AZKA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 3.0,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421011",
+    "nama": "NOVIANTI BR SIMANJUNTAK",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.98,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421043",
+    "nama": "NANDA RAHMA DITA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.97,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421029",
+    "nama": "ARYUDA DWITAMA RAMADHAN",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.92,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421042",
+    "nama": "NAINA SYAQILALIYA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.89,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421001",
+    "nama": "AGUSTIANA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.83,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421006",
+    "nama": "M. PADILA",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.82,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421024",
+    "nama": "T. NUR LIZA ASTI",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.72,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421004",
+    "nama": "LINA AYU WULANDARI",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.71,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421028",
+    "nama": "NAYA HASANTA QULQI",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.66,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421025",
+    "nama": "TEGAR KURNIAWAN",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.59,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202421056",
+    "nama": "AHMAD FAISAL ALI TANJUNG",
+    "prodi": "Administrasi Bisnis",
+    "kls": "ABK1",
+    "ipk": 2.5,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423009",
+    "nama": "MELDA SORMIN",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.9,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423023",
+    "nama": "SASKIA SAHRANI",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.84,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423031",
+    "nama": "NURJAYANTI",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.83,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423026",
+    "nama": "R. PUTRI",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.78,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423012",
+    "nama": "RIVA DWI PERMATASARI",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.77,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423016",
+    "nama": "ERIKA ADETIA BR RAMBE",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.77,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423007",
+    "nama": "JENNY ARIMBI",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.76,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423025",
+    "nama": "TIARA RANTIKA",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.74,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423002",
+    "nama": "ANJEL SIRAIT",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.69,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423015",
+    "nama": "ZANETA INSANI ZAIN",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.61,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423003",
+    "nama": "ARDHYAS GUSHENDA",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.59,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423029",
+    "nama": "NABILA RAHMAH MAYRIZAL SARI",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.59,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423011",
+    "nama": "RASENDRIYA YUDIANINGSIH EKA PUTRI",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.54,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423006",
+    "nama": "INTAN SAPUTRI",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.37,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423020",
+    "nama": "HESTI PRAMESTIA",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.33,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423001",
+    "nama": "ALEX CANDRA SINAMBELA",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.29,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423017",
+    "nama": "KALISA PURNAMA",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.28,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423021",
+    "nama": "YUDHA KURNIAWAN",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.2,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423030",
+    "nama": "MUHAMMAD WILDAN EL HAKIM",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.19,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423022",
+    "nama": "RAYSA",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 3.08,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423028",
+    "nama": "HISKIA SANDRI",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 2.57,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202423018",
+    "nama": "SOPIANI",
+    "prodi": "Komputerisasi Akuntansi",
+    "kls": "AKK1",
+    "ipk": 2.33,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422011",
+    "nama": "KARINA NURAINI KUSUMA",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 3.64,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422018",
+    "nama": "RAFLY IRWANSYAH SAPUTRA",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 3.61,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422007",
+    "nama": "SHAHIBIL LADZI",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 3.4,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422008",
+    "nama": "NUR INTAN KHAIRINA",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 3.24,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422005",
+    "nama": "MOHAMAD RIDHO ALFARIZI",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 3.23,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422009",
+    "nama": "M. ARYA JULIO",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 3.2,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422012",
+    "nama": "M. FIKRI ALFAJRI",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 3.2,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422003",
+    "nama": "CELIA ERMAYANI",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 3.17,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422001",
+    "nama": "ABDULLAH",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 3.07,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422004",
+    "nama": "DIMAS ARSY SATRIA PUTRA",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 2.91,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422019",
+    "nama": "RIO PUTRA",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 2.87,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202422020",
+    "nama": "BUDI SETIAWAN",
+    "prodi": "Manajemen Informatika",
+    "kls": "MIK1",
+    "ipk": 2.81,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202424012",
+    "nama": "WILDAN ZACKY",
+    "prodi": "Hubungan Masyarakat",
+    "kls": "KMK1",
+    "ipk": 3.92,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202424010",
+    "nama": "CATHERINE GRACE MARIA",
+    "prodi": "Hubungan Masyarakat",
+    "kls": "KMK1",
+    "ipk": 3.86,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202424011",
+    "nama": "MAISA KHASANAH",
+    "prodi": "Hubungan Masyarakat",
+    "kls": "KMK1",
+    "ipk": 3.81,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202424009",
+    "nama": "RISKA FITRIA",
+    "prodi": "Hubungan Masyarakat",
+    "kls": "KMK1",
+    "ipk": 3.6,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202424002",
+    "nama": "ANDINI",
+    "prodi": "Hubungan Masyarakat",
+    "kls": "KMK1",
+    "ipk": 3.55,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202424013",
+    "nama": "SALMA RAHMADEFI",
+    "prodi": "Hubungan Masyarakat",
+    "kls": "KMK1",
+    "ipk": 3.44,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202424007",
+    "nama": "SUCI INDAH RAMADHANI",
+    "prodi": "Hubungan Masyarakat",
+    "kls": "KMK1",
+    "ipk": 3.32,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202424005",
+    "nama": "SIDQI RAMADHANI",
+    "prodi": "Hubungan Masyarakat",
+    "kls": "KMK1",
+    "ipk": 3.21,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202424004",
+    "nama": "FITRI WAHYUNI",
+    "prodi": "Hubungan Masyarakat",
+    "kls": "KMK1",
+    "ipk": 2.9,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  },
+  {
+    "nim": "202424006",
+    "nama": "PUTRA PRATAMA",
+    "prodi": "Hubungan Masyarakat",
+    "kls": "KMK1",
+    "ipk": 2.8,
+    "angkatan": "2024",
+    "fakultas": "-",
+    "status_kelayakan": "ELIGIBLE"
+  }
+]

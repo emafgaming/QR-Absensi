@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma.js';
 import { createAuditLog } from '../utils/audit.js';
-import { MahasiswaSchema } from '../types/index.js';
+import { MahasiswaSchema, PRODI_OPTIONS } from '../types/index.js';
 
 export async function getAll(req: Request, res: Response) {
   try {
@@ -29,7 +29,11 @@ export async function getAll(req: Request, res: Response) {
     }
 
     if (prodi) {
-      where.prodi = prodi;
+      if (prodi === 'PERLU_DIPERIKSA' || prodi === 'REVIEW_NEEDED') {
+        where.prodi = { notIn: [...PRODI_OPTIONS] };
+      } else {
+        where.prodi = prodi;
+      }
     }
 
     if (fakultas) {
@@ -40,7 +44,7 @@ export async function getAll(req: Request, res: Response) {
       where.status_kelayakan = status_kelayakan;
     }
 
-    const [total, data] = await Promise.all([
+    const [total, rawData] = await Promise.all([
       prisma.mahasiswa.count({ where }),
       prisma.mahasiswa.findMany({
         where,
@@ -60,11 +64,21 @@ export async function getAll(req: Request, res: Response) {
       }),
     ]);
 
-    // Distinct prodi and fakultas for filter dropdowns
-    const [prodiList, fakultasList] = await Promise.all([
-      prisma.mahasiswa.findMany({ select: { prodi: true }, distinct: ['prodi'], orderBy: { prodi: 'asc' } }),
-      prisma.mahasiswa.findMany({ select: { fakultas: true }, distinct: ['fakultas'], orderBy: { fakultas: 'asc' } }),
-    ]);
+    const data = rawData.map((m) => ({
+      ...m,
+      is_prodi_valid: PRODI_OPTIONS.includes(m.prodi as any),
+    }));
+
+    // Distinct prodi for filter dropdowns
+    const dbProdiList = await prisma.mahasiswa.findMany({
+      select: { prodi: true },
+      distinct: ['prodi'],
+      orderBy: { prodi: 'asc' },
+    });
+
+    const allProdis = Array.from(
+      new Set([...PRODI_OPTIONS, ...dbProdiList.map((p) => p.prodi)])
+    );
 
     return res.json({
       success: true,
@@ -75,8 +89,8 @@ export async function getAll(req: Request, res: Response) {
         limit: limitNum,
         totalPages: Math.ceil(total / limitNum),
         filterOptions: {
-          prodi: prodiList.map(p => p.prodi),
-          fakultas: fakultasList.map(f => f.fakultas),
+          prodi: allProdis,
+          standardProdi: PRODI_OPTIONS,
         },
       },
     });
@@ -134,8 +148,8 @@ export async function create(req: Request, res: Response) {
         nim: payload.nim.trim(),
         nama: payload.nama.trim(),
         prodi: payload.prodi.trim(),
-        fakultas: payload.fakultas.trim(),
-        angkatan: payload.angkatan.trim(),
+        fakultas: payload.fakultas ? payload.fakultas.trim() : '-',
+        angkatan: payload.angkatan ? payload.angkatan.trim() : new Date().getFullYear().toString(),
         status_kelayakan: payload.status_kelayakan || 'ELIGIBLE',
         email: payload.email?.trim() || null,
         no_hp: payload.no_hp?.trim() || null,
@@ -320,9 +334,9 @@ export async function importCsv(req: Request, res: Response) {
         nim: String(rawRow.nim || rawRow.NIM || '').trim(),
         nama: String(rawRow.nama || rawRow.Nama || rawRow.NAMA || '').trim(),
         prodi: String(rawRow.prodi || rawRow.Prodi || rawRow.PRODI || rawRow['Program Studi'] || '').trim(),
-        fakultas: String(rawRow.fakultas || rawRow.Fakultas || rawRow.FAKULTAS || '').trim(),
-        angkatan: String(rawRow.angkatan || rawRow.Angkatan || rawRow.ANGKATAN || '').trim(),
-        status_kelayakan: String(rawRow.status_kelayakan || rawRow.status || 'ELIGIBLE').toUpperCase().trim(),
+        fakultas: String(rawRow.fakultas || rawRow.Fakultas || rawRow.FAKULTAS || '-').trim() || '-',
+        angkatan: String(rawRow.angkatan || rawRow.Angkatan || rawRow.ANGKATAN || new Date().getFullYear().toString()).trim(),
+        status_kelayakan: 'ELIGIBLE',
         email: rawRow.email ? String(rawRow.email).trim() : null,
         no_hp: rawRow.no_hp || rawRow.telepon ? String(rawRow.no_hp || rawRow.telepon).trim() : null,
       };
@@ -332,19 +346,20 @@ export async function importCsv(req: Request, res: Response) {
         return;
       }
       if (!normalizedRow.nama) {
-        errors.push({ row: rowNum, nim: normalizedRow.nim, error: 'Nama wajib diisi' });
+        errors.push({ row: rowNum, nim: normalizedRow.nim, error: 'Nama Mahasiswa wajib diisi' });
         return;
       }
       if (!normalizedRow.prodi) {
         errors.push({ row: rowNum, nim: normalizedRow.nim, error: 'Program Studi wajib diisi' });
         return;
       }
-      if (!normalizedRow.fakultas) {
-        errors.push({ row: rowNum, nim: normalizedRow.nim, error: 'Fakultas wajib diisi' });
-        return;
-      }
-      if (!normalizedRow.angkatan) {
-        errors.push({ row: rowNum, nim: normalizedRow.nim, error: 'Angkatan wajib diisi' });
+      // Strict validation for 4 allowed prodis
+      if (!PRODI_OPTIONS.includes(normalizedRow.prodi as any)) {
+        errors.push({
+          row: rowNum,
+          nim: normalizedRow.nim,
+          error: `Program studi "${normalizedRow.prodi}" tidak valid. Harus salah satu dari 4 pilihan resmi: ${PRODI_OPTIONS.join(', ')}`,
+        });
         return;
       }
 
@@ -359,10 +374,7 @@ export async function importCsv(req: Request, res: Response) {
       }
 
       processedNimSet.add(normalizedRow.nim);
-      validRows.push({
-        ...normalizedRow,
-        status_kelayakan: normalizedRow.status_kelayakan === 'NOT_ELIGIBLE' ? 'NOT_ELIGIBLE' : 'ELIGIBLE',
-      });
+      validRows.push(normalizedRow);
     });
 
     let insertedCount = 0;
@@ -396,5 +408,70 @@ export async function importCsv(req: Request, res: Response) {
   } catch (error: any) {
     console.error('Import CSV error:', error);
     return res.status(500).json({ success: false, message: 'Gagal memproses file CSV' });
+  }
+}
+
+/**
+ * Export Mahasiswa Data to CSV
+ */
+export async function exportCsv(req: Request, res: Response) {
+  try {
+    const { search = '', prodi = '' } = req.query as Record<string, string>;
+    const where: any = {};
+    if (search) {
+      where.OR = [
+        { nim: { contains: search } },
+        { nama: { contains: search } },
+      ];
+    }
+    if (prodi === 'PERLU_DIPERIKSA' || prodi === 'REVIEW_NEEDED') {
+      where.prodi = { notIn: [...PRODI_OPTIONS] };
+    } else if (prodi) {
+      where.prodi = prodi;
+    }
+
+    const list = await prisma.mahasiswa.findMany({
+      where,
+      orderBy: { nim: 'asc' },
+      include: {
+        qr_codes: { where: { status: 'ACTIVE' }, select: { id: true } },
+        absensi: { select: { id: true, waktu_absen: true, status: true } },
+      },
+    });
+
+    const headers = ['No', 'NIM', 'Nama Mahasiswa', 'Program Studi', 'Angkatan', 'Status QR', 'Status Absensi'];
+    const escapeCsv = (str: any) => {
+      if (str === null || str === undefined) return '""';
+      const clean = String(str).replace(/"/g, '""');
+      return `"${clean}"`;
+    };
+
+    const rows = [headers.join(',')];
+    list.forEach((m, idx) => {
+      const hasQr = m.qr_codes && m.qr_codes.length > 0 ? 'Sudah Ada QR' : 'Belum Terbit';
+      const absensiStatus = m.absensi && m.absensi.length > 0 ? m.absensi[0].status : 'Belum Hadir';
+      rows.push(
+        [
+          idx + 1,
+          escapeCsv(m.nim),
+          escapeCsv(m.nama),
+          escapeCsv(m.prodi),
+          escapeCsv(m.angkatan),
+          escapeCsv(hasQr),
+          escapeCsv(absensiStatus),
+        ].join(',')
+      );
+    });
+
+    const csvString = '\uFEFF' + rows.join('\r\n');
+    res.setHeader('Content-Type', 'text/csv; charset=utf-8');
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="Data_Mahasiswa_Wisuda_${new Date().toISOString().slice(0, 10)}.csv"`
+    );
+    return res.status(200).send(csvString);
+  } catch (err: any) {
+    console.error('Export mahasiswa error:', err);
+    return res.status(500).json({ success: false, message: 'Gagal mengekspor data mahasiswa' });
   }
 }

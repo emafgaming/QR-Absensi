@@ -6,7 +6,6 @@ import {
   Search,
   Filter,
   CheckCircle,
-  XCircle,
   Edit2,
   Trash2,
   Download,
@@ -16,12 +15,24 @@ import {
   ChevronRight,
   ShieldAlert,
   GraduationCap,
+  Sparkles,
+  Info,
+  AlertTriangle,
 } from 'lucide-react';
 import Papa from 'papaparse';
 import { request } from '../api/client.js';
 import { Modal } from '../components/Modal.js';
 import { useAuth } from '../context/AuthContext.js';
 import { SkeletonTable } from '../components/Skeleton.js';
+
+export const PROGRAM_STUDI_OPTIONS = [
+  'Manajemen Informatika',
+  'Hubungan Masyarakat',
+  'Komputerisasi Akuntansi',
+  'Administrasi Bisnis',
+] as const;
+
+export type ProgramStudi = (typeof PROGRAM_STUDI_OPTIONS)[number];
 
 export const MahasiswaPage: React.FC = () => {
   const { hasRole } = useAuth();
@@ -36,34 +47,31 @@ export const MahasiswaPage: React.FC = () => {
   // Filters
   const [search, setSearch] = useState('');
   const [selectedProdi, setSelectedProdi] = useState('');
-  const [selectedFakultas, setSelectedFakultas] = useState('');
-  const [selectedStatus, setSelectedStatus] = useState('');
-  const [prodiOptions, setProdiOptions] = useState<string[]>([]);
-  const [fakultasOptions, setFakultasOptions] = useState<string[]>([]);
+
+  // Notification Toast State
+  const [notification, setNotification] = useState<string | null>(null);
 
   // Modals
   const [isAddModalOpen, setIsAddModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isImportModalOpen, setIsImportModalOpen] = useState(false);
-  const [isKelayakanModalOpen, setIsKelayakanModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  // Selected item for edit/toggle/delete
+  // Selected item for edit/delete
   const [selectedMahasiswa, setSelectedMahasiswa] = useState<any>(null);
 
-  // Form State
+  // Form State (Simplified: NIM, Nama Mahasiswa, Program Studi dropdown, Angkatan)
   const [formData, setFormData] = useState({
     nim: '',
     nama: '',
-    prodi: '',
-    fakultas: '',
+    prodi: 'Manajemen Informatika',
     angkatan: new Date().getFullYear().toString(),
-    status_kelayakan: 'ELIGIBLE',
-    email: '',
-    no_hp: '',
   });
   const [formError, setFormError] = useState<string | null>(null);
   const [formLoading, setFormLoading] = useState(false);
+
+  // Export State
+  const [exportLoading, setExportLoading] = useState(false);
 
   // CSV Import State
   const [csvFile, setCsvFile] = useState<File | null>(null);
@@ -72,10 +80,17 @@ export const MahasiswaPage: React.FC = () => {
   const [importLoading, setImportLoading] = useState(false);
   const [importError, setImportError] = useState<string | null>(null);
 
-  // Kelayakan Reason
-  const [kelayakanReason, setKelayakanReason] = useState('');
+  // Delete State
   const [deleteError, setDeleteError] = useState<string | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // Show auto-dismiss notification toast
+  const triggerNotification = (msg: string) => {
+    setNotification(msg);
+    setTimeout(() => {
+      setNotification((curr) => (curr === msg ? null : curr));
+    }, 4000);
+  };
 
   const fetchMahasiswa = async () => {
     setLoading(true);
@@ -85,21 +100,15 @@ export const MahasiswaPage: React.FC = () => {
         limit: '15',
         search,
         prodi: selectedProdi,
-        fakultas: selectedFakultas,
-        status_kelayakan: selectedStatus,
       });
       const res = await request(`/mahasiswa?${params.toString()}`);
       if (res.success) {
         setMahasiswaList(res.data);
         setTotal(res.meta.total);
         setTotalPages(res.meta.totalPages);
-        if (res.meta.filterOptions) {
-          setProdiOptions(res.meta.filterOptions.prodi || []);
-          setFakultasOptions(res.meta.filterOptions.fakultas || []);
-        }
       }
     } catch (e) {
-      console.error(e);
+      console.error('Gagal mengambil data mahasiswa:', e);
     } finally {
       setLoading(false);
     }
@@ -107,19 +116,15 @@ export const MahasiswaPage: React.FC = () => {
 
   useEffect(() => {
     fetchMahasiswa();
-  }, [page, search, selectedProdi, selectedFakultas, selectedStatus]);
+  }, [page, search, selectedProdi]);
 
   // Open Create Modal
   const openCreateModal = () => {
     setFormData({
       nim: '',
       nama: '',
-      prodi: '',
-      fakultas: '',
+      prodi: 'Manajemen Informatika',
       angkatan: new Date().getFullYear().toString(),
-      status_kelayakan: 'ELIGIBLE',
-      email: '',
-      no_hp: '',
     });
     setFormError(null);
     setIsAddModalOpen(true);
@@ -128,15 +133,34 @@ export const MahasiswaPage: React.FC = () => {
   // Submit Create
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!formData.nim.trim()) {
+      setFormError('NIM wajib diisi.');
+      return;
+    }
+    if (!formData.nama.trim()) {
+      setFormError('Nama Mahasiswa wajib diisi.');
+      return;
+    }
+    if (!formData.prodi) {
+      setFormError('Program Studi wajib dipilih.');
+      return;
+    }
+
     setFormLoading(true);
     setFormError(null);
     try {
       const res = await request('/mahasiswa', {
         method: 'POST',
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          nim: formData.nim.trim(),
+          nama: formData.nama.trim(),
+          prodi: formData.prodi,
+          angkatan: formData.angkatan.trim() || new Date().getFullYear().toString(),
+        }),
       });
       if (res.success) {
         setIsAddModalOpen(false);
+        triggerNotification(`Mahasiswa "${formData.nama}" berhasil ditambahkan.`);
         fetchMahasiswa();
       }
     } catch (err: any) {
@@ -153,11 +177,7 @@ export const MahasiswaPage: React.FC = () => {
       nim: mhs.nim,
       nama: mhs.nama,
       prodi: mhs.prodi,
-      fakultas: mhs.fakultas,
-      angkatan: mhs.angkatan,
-      status_kelayakan: mhs.status_kelayakan,
-      email: mhs.email || '',
-      no_hp: mhs.no_hp || '',
+      angkatan: mhs.angkatan || new Date().getFullYear().toString(),
     });
     setFormError(null);
     setIsEditModalOpen(true);
@@ -167,15 +187,27 @@ export const MahasiswaPage: React.FC = () => {
   const handleEditSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedMahasiswa) return;
+
+    if (!formData.nim.trim() || !formData.nama.trim() || !formData.prodi) {
+      setFormError('Harap lengkapi semua field bertanda bintang (*).');
+      return;
+    }
+
     setFormLoading(true);
     setFormError(null);
     try {
       const res = await request(`/mahasiswa/${selectedMahasiswa.id}`, {
         method: 'PUT',
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          nim: formData.nim.trim(),
+          nama: formData.nama.trim(),
+          prodi: formData.prodi,
+          angkatan: formData.angkatan.trim() || new Date().getFullYear().toString(),
+        }),
       });
       if (res.success) {
         setIsEditModalOpen(false);
+        triggerNotification(`Data mahasiswa "${formData.nama}" berhasil diperbarui.`);
         fetchMahasiswa();
       }
     } catch (err: any) {
@@ -202,6 +234,7 @@ export const MahasiswaPage: React.FC = () => {
       });
       if (res.success) {
         setIsDeleteModalOpen(false);
+        triggerNotification(`Data mahasiswa "${selectedMahasiswa.nama}" berhasil dihapus.`);
         fetchMahasiswa();
       }
     } catch (err: any) {
@@ -211,40 +244,39 @@ export const MahasiswaPage: React.FC = () => {
     }
   };
 
-  // Open Kelayakan Modal
-  const openKelayakanModal = (mhs: any) => {
-    setSelectedMahasiswa(mhs);
-    setKelayakanReason('');
-    setIsKelayakanModalOpen(true);
-  };
-
-  // Toggle Kelayakan
-  const handleToggleKelayakan = async () => {
-    if (!selectedMahasiswa) return;
-    const nextStatus = selectedMahasiswa.status_kelayakan === 'ELIGIBLE' ? 'NOT_ELIGIBLE' : 'ELIGIBLE';
+  // Export Filtered Student Data to CSV
+  const handleExportData = async () => {
+    setExportLoading(true);
     try {
-      const res = await request(`/mahasiswa/${selectedMahasiswa.id}/kelayakan`, {
-        method: 'PATCH',
-        body: JSON.stringify({
-          status_kelayakan: nextStatus,
-          alasan: kelayakanReason || undefined,
-        }),
+      const params = new URLSearchParams({
+        search,
+        prodi: selectedProdi,
       });
-      if (res.success) {
-        setIsKelayakanModalOpen(false);
-        fetchMahasiswa();
-      }
+      const blob = await request<Blob>(`/mahasiswa/export-csv?${params.toString()}`);
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Data_Mahasiswa_Wisuda_${new Date().toISOString().slice(0, 10)}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+      triggerNotification('Data mahasiswa berhasil diekspor ke file CSV.');
     } catch (err: any) {
-      alert(err.message || 'Gagal mengubah status kelayakan.');
+      alert(err.message || 'Gagal mengekspor data mahasiswa.');
+    } finally {
+      setExportLoading(false);
     }
   };
 
-  // Download Sample CSV Template
+  // Download Sample Official CSV Template
   const handleDownloadTemplate = () => {
     const csvContent =
-      'nim,nama,prodi,fakultas,angkatan,status_kelayakan,email,no_hp\n' +
-      '202201010,Budi Santoso,Teknik Informatika,Teknologi Informasi,2022,ELIGIBLE,budi.santoso@student.ac.id,081234567890\n' +
-      '202201011,Citra Dewi,Sistem Informasi,Teknologi Informasi,2022,ELIGIBLE,citra.dewi@student.ac.id,081234567891\n';
+      'nim,nama,prodi,angkatan\n' +
+      '202201010,Budi Santoso,Manajemen Informatika,2022\n' +
+      '202201011,Citra Dewi,Hubungan Masyarakat,2022\n' +
+      '202201012,Fajar Pratama,Komputerisasi Akuntansi,2022\n' +
+      '202201013,Anisa Rahma,Administrasi Bisnis,2022\n';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -295,6 +327,7 @@ export const MahasiswaPage: React.FC = () => {
       if (res.success) {
         setImportResult(res.data);
         fetchMahasiswa();
+        triggerNotification(`${res.data.inserted} mahasiswa berhasil diimpor.`);
       }
     } catch (err: any) {
       setImportError(err.message || 'Gagal mengimpor berkas CSV ke server.');
@@ -303,49 +336,75 @@ export const MahasiswaPage: React.FC = () => {
     }
   };
 
+  // Check if prodi is one of the 4 official options
+  const isOfficialProdi = (prodiName: string) => {
+    return (PROGRAM_STUDI_OPTIONS as readonly string[]).includes(prodiName);
+  };
+
   return (
     <div className="space-y-6">
+      {/* Toast Notification Alert */}
+      {notification && (
+        <div className="fixed top-5 right-5 z-50 flex items-center gap-2.5 px-4 py-3 bg-[#11446E] text-white text-xs font-bold rounded-xl shadow-lg border border-lp3i-blue-200 animate-in fade-in slide-in-from-top-2 duration-300">
+          <CheckCircle className="w-4 h-4 text-emerald-400 flex-shrink-0" />
+          <span>{notification}</span>
+        </div>
+      )}
+
       {/* Top Banner & Main Actions */}
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 sm:gap-4 bg-lp3i-neutral-surface p-4 sm:p-6 rounded-2xl border border-lp3i-neutral-border shadow-subtle">
         <div>
-          <div className="flex items-center gap-2">
-            <h1 className="text-base sm:text-xl font-extrabold text-lp3i-blue tracking-tight">
+          <div className="flex items-center gap-2.5">
+            <h1 className="text-base sm:text-xl font-extrabold text-[#11446E] tracking-tight">
               Master Data Mahasiswa Wisuda
             </h1>
-            <span className="text-[11px] font-bold text-lp3i-blue bg-lp3i-blue-light px-2.5 py-0.5 rounded-full border border-lp3i-blue-200">
+            <span className="text-[11px] font-bold text-[#11446E] bg-[#EAF1F6] px-2.5 py-0.5 rounded-full border border-lp3i-blue-200">
               Total: {total}
             </span>
           </div>
           <p className="text-xs text-lp3i-neutral-muted mt-1">
-            Kelola data wisudawan, kelayakan kelulusan, dan impor massal dari file CSV
+            Pengelolaan data calon wisudawan Politeknik LP3I dengan pilihan 4 Program Studi resmi
           </p>
         </div>
 
-        {canEdit && (
-          <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
-            <button
-              onClick={() => {
-                setCsvFile(null);
-                setParsedRows([]);
-                setImportResult(null);
-                setImportError(null);
-                setIsImportModalOpen(true);
-              }}
-              className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-lp3i-neutral-50 hover:bg-lp3i-neutral-100 text-lp3i-neutral-900 border border-lp3i-neutral-border text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex-1 sm:flex-none"
-            >
-              <Upload className="w-4 h-4 text-lp3i-blue" />
-              <span>Impor CSV</span>
-            </button>
+        <div className="flex flex-wrap items-center gap-2 w-full sm:w-auto">
+          {/* Export CSV Button */}
+          <button
+            onClick={handleExportData}
+            disabled={exportLoading || total === 0}
+            className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-lp3i-neutral-50 hover:bg-lp3i-neutral-100 text-[#17212B] border border-lp3i-neutral-border text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer disabled:opacity-50 flex-1 sm:flex-none"
+            title="Ekspor Data Mahasiswa ke format CSV"
+          >
+            <Download className="w-4 h-4 text-[#11446E]" />
+            <span>{exportLoading ? 'Mengekspor...' : 'Ekspor CSV'}</span>
+          </button>
 
-            <button
-              onClick={openCreateModal}
-              className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex-1 sm:flex-none"
-            >
-              <UserPlus className="w-4 h-4" />
-              <span>Tambah Mahasiswa</span>
-            </button>
-          </div>
-        )}
+          {canEdit && (
+            <>
+              <button
+                onClick={() => {
+                  setCsvFile(null);
+                  setParsedRows([]);
+                  setImportResult(null);
+                  setImportError(null);
+                  setIsImportModalOpen(true);
+                }}
+                className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-lp3i-neutral-50 hover:bg-lp3i-neutral-100 text-[#17212B] border border-lp3i-neutral-border text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex-1 sm:flex-none"
+              >
+                <Upload className="w-4 h-4 text-[#11446E]" />
+                <span>Impor CSV</span>
+              </button>
+
+              <button
+                onClick={openCreateModal}
+                className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-[#11446E] hover:bg-[#0C3556] text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex-1 sm:flex-none"
+              >
+                <UserPlus className="w-4 h-4" />
+                <span>Tambah Mahasiswa</span>
+              </button>
+            </>
+          )}
+        </div>
       </div>
 
       {/* Filter and Search Bar */}
@@ -360,119 +419,97 @@ export const MahasiswaPage: React.FC = () => {
               setPage(1);
             }}
             placeholder="Cari berdasarkan NIM atau Nama mahasiswa..."
-            className="w-full pl-10 pr-4 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
+            className="w-full pl-10 pr-4 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden"
           />
         </div>
 
         <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-2.5 w-full md:w-auto">
-          <select
-            value={selectedProdi}
-            onChange={(e) => {
-              setSelectedProdi(e.target.value);
-              setPage(1);
-            }}
-            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden w-full sm:w-auto"
-          >
-            <option value="">Semua Program Studi</option>
-            {prodiOptions.map((p) => (
-              <option key={p} value={p}>
-                {p}
-              </option>
-            ))}
-          </select>
-
-          <select
-            value={selectedStatus}
-            onChange={(e) => {
-              setSelectedStatus(e.target.value);
-              setPage(1);
-            }}
-            className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:outline-hidden w-full sm:w-auto"
-          >
-            <option value="">Semua Status Kelayakan</option>
-            <option value="ELIGIBLE">Layak (Eligible)</option>
-            <option value="NOT_ELIGIBLE">Tidak Layak (Not Eligible)</option>
-          </select>
+          {/* Program Studi Filter Dropdown */}
+          <div className="flex items-center gap-1.5">
+            <span className="text-[11px] font-bold text-lp3i-neutral-muted hidden sm:inline">Prodi:</span>
+            <select
+              value={selectedProdi}
+              onChange={(e) => {
+                setSelectedProdi(e.target.value);
+                setPage(1);
+              }}
+              className="text-xs font-semibold bg-lp3i-neutral-50 border border-lp3i-neutral-border text-lp3i-neutral-900 py-2 px-3 rounded-xl focus:border-[#11446E] focus:outline-hidden w-full sm:w-auto cursor-pointer"
+            >
+              <option value="">Semua Program Studi (4 Prodi)</option>
+              {PROGRAM_STUDI_OPTIONS.map((p) => (
+                <option key={p} value={p}>
+                  {p}
+                </option>
+              ))}
+              <option value="PERLU_DIPERIKSA">Perlu Diperiksa (Non-Standar)</option>
+            </select>
+          </div>
         </div>
       </div>
 
       {/* Table Data Mahasiswa */}
       <div className="bg-lp3i-neutral-surface rounded-2xl border border-lp3i-neutral-border shadow-subtle overflow-hidden">
         {/* Mobile Swipe Hint */}
-        <div className="sm:hidden px-4 py-2 bg-lp3i-blue-light/60 text-[11px] text-lp3i-blue font-semibold flex items-center justify-between border-b border-lp3i-neutral-border">
+        <div className="sm:hidden px-4 py-2 bg-[#EAF1F6] text-[11px] text-[#11446E] font-semibold flex items-center justify-between border-b border-lp3i-neutral-border">
           <span>Geser tabel ke samping untuk melihat kolom lengkap</span>
           <span>&rarr;</span>
         </div>
         <div className="overflow-x-auto mobile-touch-scroll">
-          <table className="w-full text-left text-xs min-w-[700px]">
-            <thead className="bg-lp3i-neutral-50 text-lp3i-neutral-muted font-bold uppercase tracking-wider border-b border-lp3i-neutral-border">
+          <table className="w-full text-left text-xs min-w-[650px]">
+            <thead className="bg-[#F7F9FB] text-lp3i-neutral-muted font-bold uppercase tracking-wider border-b border-lp3i-neutral-border">
               <tr>
                 <th className="py-3 px-4">NIM</th>
-                <th className="py-3 px-4">Nama Lengkap</th>
+                <th className="py-3 px-4">Nama Mahasiswa</th>
                 <th className="py-3 px-4">Program Studi</th>
-                <th className="py-3 px-4">Fakultas / Angkatan</th>
-                <th className="py-3 px-4 text-center">Status Kelayakan</th>
-                <th className="py-3 px-4 text-center">QR Card</th>
+                <th className="py-3 px-4">Angkatan</th>
+                <th className="py-3 px-4 text-center">Status QR Card</th>
                 {canEdit && <th className="py-3 px-4 text-center">Aksi</th>}
               </tr>
             </thead>
             <tbody className="divide-y divide-lp3i-neutral-border font-medium text-lp3i-neutral-900">
               {loading ? (
-                <SkeletonTable rows={5} columns={canEdit ? 7 : 6} />
+                <SkeletonTable rows={5} columns={canEdit ? 6 : 5} />
               ) : mahasiswaList.length === 0 ? (
                 <tr>
-                  <td colSpan={canEdit ? 7 : 6} className="py-12 text-center text-lp3i-neutral-muted">
+                  <td colSpan={canEdit ? 6 : 5} className="py-12 text-center text-lp3i-neutral-muted">
                     Tidak ditemukan data mahasiswa yang sesuai kriteria pencarian.
                   </td>
                 </tr>
               ) : (
                 mahasiswaList.map((mhs) => {
                   const hasActiveQr = mhs.qr_codes && mhs.qr_codes.some((q: any) => q.status === 'ACTIVE');
-                  const isEligible = mhs.status_kelayakan === 'ELIGIBLE';
+                  const isValidProdi = isOfficialProdi(mhs.prodi);
 
                   return (
                     <tr key={mhs.id} className="hover:bg-lp3i-neutral-50/70 transition-colors">
-                      <td className="py-3 px-4 font-mono font-bold text-lp3i-blue">
+                      <td className="py-3 px-4 font-mono font-bold text-[#11446E]">
                         {mhs.nim}
                       </td>
-                      <td className="py-3 px-4 font-bold text-lp3i-neutral-900">
+                      <td className="py-3 px-4 font-bold text-[#17212B]">
                         {mhs.nama}
                       </td>
-                      <td className="py-3 px-4 text-lp3i-neutral-700">
-                        {mhs.prodi}
+                      <td className="py-3 px-4">
+                        <div className="flex items-center gap-2">
+                          <span className="font-semibold text-lp3i-neutral-900">{mhs.prodi}</span>
+                          {!isValidProdi && (
+                            <span
+                              className="inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200"
+                              title="Data lama di luar 4 pilihan resmi. Harap lakukan pemetaan ulang melalui menu Edit."
+                            >
+                              <AlertTriangle className="w-3 h-3 text-amber-600" />
+                              <span>Perlu diperiksa</span>
+                            </span>
+                          )}
+                        </div>
                       </td>
                       <td className="py-3 px-4 text-lp3i-neutral-muted">
-                        {mhs.fakultas} ({mhs.angkatan})
-                      </td>
-                      <td className="py-3 px-4 text-center">
-                        <button
-                          onClick={() => canEdit && openKelayakanModal(mhs)}
-                          disabled={!canEdit}
-                          className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold border transition-colors ${
-                            isEligible
-                              ? 'bg-lp3i-status-success-bg text-lp3i-status-success border-lp3i-status-success-border'
-                              : 'bg-lp3i-status-error-bg text-lp3i-status-error border-lp3i-status-error-border'
-                          } ${canEdit ? 'cursor-pointer hover:opacity-80' : ''}`}
-                          title={canEdit ? 'Klik untuk mengubah status kelayakan' : undefined}
-                        >
-                          {isEligible ? (
-                            <>
-                              <CheckCircle className="w-3 h-3" />
-                              <span>Layak</span>
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="w-3 h-3" />
-                              <span>Tidak Layak</span>
-                            </>
-                          )}
-                        </button>
+                        {mhs.angkatan || '-'}
                       </td>
                       <td className="py-3 px-4 text-center">
                         <span
-                          className={`text-[10px] font-bold px-2 py-0.5 rounded-full border ${
+                          className={`text-[10px] font-bold px-2.5 py-0.5 rounded-full border ${
                             hasActiveQr
-                              ? 'bg-lp3i-blue-light text-lp3i-blue border-lp3i-blue-200'
+                              ? 'bg-[#EAF1F6] text-[#11446E] border-blue-200'
                               : 'bg-lp3i-neutral-100 text-lp3i-neutral-muted border-lp3i-neutral-border'
                           }`}
                         >
@@ -484,8 +521,8 @@ export const MahasiswaPage: React.FC = () => {
                           <div className="flex items-center justify-center gap-1">
                             <button
                               onClick={() => openEditModal(mhs)}
-                              className="p-1.5 rounded-lg text-lp3i-neutral-700 hover:text-lp3i-blue hover:bg-lp3i-blue-light transition-colors cursor-pointer"
-                              title="Edit Mahasiswa"
+                              className="p-1.5 rounded-lg text-lp3i-neutral-700 hover:text-[#11446E] hover:bg-[#EAF1F6] transition-colors cursor-pointer"
+                              title="Edit Data Mahasiswa"
                             >
                               <Edit2 className="w-3.5 h-3.5" />
                             </button>
@@ -533,7 +570,7 @@ export const MahasiswaPage: React.FC = () => {
         )}
       </div>
 
-      {/* Create Modal */}
+      {/* Simplified Create Modal */}
       <Modal
         isOpen={isAddModalOpen}
         onClose={() => setIsAddModalOpen(false)}
@@ -547,84 +584,73 @@ export const MahasiswaPage: React.FC = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div className="space-y-3.5">
+            {/* NIM Field */}
             <div>
               <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                NIM *
+                NIM <span className="text-lp3i-red">*</span>
               </label>
               <input
                 type="text"
                 value={formData.nim}
                 onChange={(e) => setFormData({ ...formData, nim: e.target.value })}
                 required
-                placeholder="Contoh: 202201015"
-                className="w-full px-3.5 py-2 text-xs font-mono font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
+                placeholder="Contoh: 202522001"
+                className="w-full px-3.5 py-2 text-xs font-mono font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden"
               />
+              <p className="text-[11px] text-lp3i-neutral-muted mt-1">Nomor Induk Mahasiswa resmi yang terdaftar</p>
             </div>
+
+            {/* Nama Mahasiswa Field */}
             <div>
               <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Nama Lengkap *
+                Nama Mahasiswa <span className="text-lp3i-red">*</span>
               </label>
               <input
                 type="text"
                 value={formData.nama}
                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                 required
-                placeholder="Nama sesuai ijazah"
-                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
+                placeholder="Nama lengkap sesuai ijazah / dokumen akademik"
+                className="w-full px-3.5 py-2 text-xs font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden"
               />
             </div>
+
+            {/* Program Studi (Strict 4-choice Dropdown) */}
             <div>
               <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Program Studi *
+                Program Studi <span className="text-lp3i-red">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 value={formData.prodi}
                 onChange={(e) => setFormData({ ...formData, prodi: e.target.value })}
                 required
-                placeholder="Contoh: Teknik Informatika"
-                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
-              />
+                className="w-full px-3.5 py-2.5 text-xs font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden cursor-pointer"
+              >
+                {PROGRAM_STUDI_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] text-lp3i-neutral-muted mt-1">
+                Pilih salah satu dari 4 program studi resmi Politeknik LP3I
+              </p>
             </div>
+
+            {/* Angkatan Field */}
             <div>
               <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Fakultas *
-              </label>
-              <input
-                type="text"
-                value={formData.fakultas}
-                onChange={(e) => setFormData({ ...formData, fakultas: e.target.value })}
-                required
-                placeholder="Contoh: Teknologi Informasi"
-                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Angkatan *
+                Tahun Angkatan <span className="text-lp3i-red">*</span>
               </label>
               <input
                 type="text"
                 value={formData.angkatan}
                 onChange={(e) => setFormData({ ...formData, angkatan: e.target.value })}
                 required
-                placeholder="Contoh: 2022"
-                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
+                placeholder="Contoh: 2025"
+                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Status Kelayakan Wisuda *
-              </label>
-              <select
-                value={formData.status_kelayakan}
-                onChange={(e) => setFormData({ ...formData, status_kelayakan: e.target.value })}
-                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden cursor-pointer"
-              >
-                <option value="ELIGIBLE">Layak (Eligible)</option>
-                <option value="NOT_ELIGIBLE">Tidak Layak (Not Eligible)</option>
-              </select>
             </div>
           </div>
 
@@ -639,7 +665,7 @@ export const MahasiswaPage: React.FC = () => {
             <button
               type="submit"
               disabled={formLoading}
-              className="px-5 py-2 text-xs font-bold text-white bg-lp3i-blue hover:bg-lp3i-blue-hover rounded-xl shadow-xs disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2 text-xs font-bold text-white bg-[#11446E] hover:bg-[#0C3556] rounded-xl shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {formLoading ? 'Menyimpan...' : 'Simpan Mahasiswa'}
             </button>
@@ -647,7 +673,7 @@ export const MahasiswaPage: React.FC = () => {
         </form>
       </Modal>
 
-      {/* Edit Modal */}
+      {/* Simplified Edit Modal */}
       <Modal
         isOpen={isEditModalOpen}
         onClose={() => setIsEditModalOpen(false)}
@@ -661,79 +687,82 @@ export const MahasiswaPage: React.FC = () => {
             </div>
           )}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {/* Warning banner if editing a student with older non-standard prodi */}
+          {selectedMahasiswa && !isOfficialProdi(selectedMahasiswa.prodi) && (
+            <div className="p-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-800 text-xs flex items-start gap-2">
+              <Info className="w-4 h-4 flex-shrink-0 text-amber-600 mt-0.5" />
+              <div>
+                <p className="font-bold">Program Studi Perlu Diperiksa</p>
+                <p className="text-[11px] mt-0.5">
+                  Mahasiswa ini saat ini memiliki data program studi non-standar: <strong>{selectedMahasiswa.prodi}</strong>.
+                  Silakan petakan ke salah satu dari 4 pilihan resmi di bawah.
+                </p>
+              </div>
+            </div>
+          )}
+
+          <div className="space-y-3.5">
             <div>
               <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                NIM *
+                NIM <span className="text-lp3i-red">*</span>
               </label>
               <input
                 type="text"
                 value={formData.nim}
                 onChange={(e) => setFormData({ ...formData, nim: e.target.value })}
                 required
-                className="w-full px-3.5 py-2 text-xs font-mono font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
+                className="w-full px-3.5 py-2 text-xs font-mono font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden"
               />
             </div>
+
             <div>
               <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Nama Lengkap *
+                Nama Mahasiswa <span className="text-lp3i-red">*</span>
               </label>
               <input
                 type="text"
                 value={formData.nama}
                 onChange={(e) => setFormData({ ...formData, nama: e.target.value })}
                 required
-                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
+                className="w-full px-3.5 py-2 text-xs font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden"
               />
             </div>
+
             <div>
               <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Program Studi *
+                Program Studi <span className="text-lp3i-red">*</span>
               </label>
-              <input
-                type="text"
+              <select
                 value={formData.prodi}
                 onChange={(e) => setFormData({ ...formData, prodi: e.target.value })}
                 required
-                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
-              />
+                className="w-full px-3.5 py-2.5 text-xs font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden cursor-pointer"
+              >
+                {/* Include previous non-standard value as marked option if applicable */}
+                {!isOfficialProdi(formData.prodi) && (
+                  <option value={formData.prodi}>
+                    [Non-Standar] {formData.prodi} (Perlu diperiksa - pilih salah satu dari 4 prodi resmi)
+                  </option>
+                )}
+                {PROGRAM_STUDI_OPTIONS.map((opt) => (
+                  <option key={opt} value={opt}>
+                    {opt}
+                  </option>
+                ))}
+              </select>
             </div>
+
             <div>
               <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Fakultas *
-              </label>
-              <input
-                type="text"
-                value={formData.fakultas}
-                onChange={(e) => setFormData({ ...formData, fakultas: e.target.value })}
-                required
-                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
-              />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Angkatan *
+                Tahun Angkatan <span className="text-lp3i-red">*</span>
               </label>
               <input
                 type="text"
                 value={formData.angkatan}
                 onChange={(e) => setFormData({ ...formData, angkatan: e.target.value })}
                 required
-                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
+                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden"
               />
-            </div>
-            <div>
-              <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Status Kelayakan Wisuda *
-              </label>
-              <select
-                value={formData.status_kelayakan}
-                onChange={(e) => setFormData({ ...formData, status_kelayakan: e.target.value })}
-                className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden cursor-pointer"
-              >
-                <option value="ELIGIBLE">Layak (Eligible)</option>
-                <option value="NOT_ELIGIBLE">Tidak Layak (Not Eligible)</option>
-              </select>
             </div>
           </div>
 
@@ -748,7 +777,7 @@ export const MahasiswaPage: React.FC = () => {
             <button
               type="submit"
               disabled={formLoading}
-              className="px-5 py-2 text-xs font-bold text-white bg-lp3i-blue hover:bg-lp3i-blue-hover rounded-xl shadow-xs disabled:opacity-50 cursor-pointer"
+              className="px-5 py-2 text-xs font-bold text-white bg-[#11446E] hover:bg-[#0C3556] rounded-xl shadow-xs disabled:opacity-50 cursor-pointer"
             >
               {formLoading ? 'Memperbarui...' : 'Simpan Perubahan'}
             </button>
@@ -778,9 +807,15 @@ export const MahasiswaPage: React.FC = () => {
           )}
 
           <div className="p-3 bg-lp3i-neutral-50 rounded-xl border border-lp3i-neutral-border text-xs">
-            <p className="text-lp3i-neutral-muted">Nama: <strong className="text-lp3i-neutral-900">{selectedMahasiswa?.nama}</strong></p>
-            <p className="text-lp3i-neutral-muted mt-1">NIM: <strong className="font-mono text-lp3i-blue">{selectedMahasiswa?.nim}</strong></p>
-            <p className="text-lp3i-neutral-muted mt-1">Prodi: <strong className="text-lp3i-neutral-900">{selectedMahasiswa?.prodi}</strong></p>
+            <p className="text-lp3i-neutral-muted">
+              Nama: <strong className="text-lp3i-neutral-900">{selectedMahasiswa?.nama}</strong>
+            </p>
+            <p className="text-lp3i-neutral-muted mt-1">
+              NIM: <strong className="font-mono text-[#11446E]">{selectedMahasiswa?.nim}</strong>
+            </p>
+            <p className="text-lp3i-neutral-muted mt-1">
+              Program Studi: <strong className="text-lp3i-neutral-900">{selectedMahasiswa?.prodi}</strong>
+            </p>
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-lp3i-neutral-border">
@@ -803,60 +838,7 @@ export const MahasiswaPage: React.FC = () => {
         </div>
       </Modal>
 
-      {/* Toggle Kelayakan Modal */}
-      <Modal
-        isOpen={isKelayakanModalOpen}
-        onClose={() => setIsKelayakanModalOpen(false)}
-        title="Ubah Status Kelayakan Wisuda"
-      >
-        <div className="space-y-4">
-          <p className="text-xs text-lp3i-neutral-muted">
-            Ubah status kelayakan wisudawan:{' '}
-            <strong className="text-lp3i-blue">
-              {selectedMahasiswa?.nama} ({selectedMahasiswa?.nim})
-            </strong>
-          </p>
-
-          <div className="p-3 bg-lp3i-neutral-50 rounded-xl border border-lp3i-neutral-border text-xs">
-            Status saat ini:{' '}
-            <strong className={selectedMahasiswa?.status_kelayakan === 'ELIGIBLE' ? 'text-lp3i-status-success' : 'text-lp3i-status-error'}>
-              {selectedMahasiswa?.status_kelayakan === 'ELIGIBLE' ? 'LAYAK (ELIGIBLE)' : 'TIDAK LAYAK (NOT ELIGIBLE)'}
-            </strong>
-          </div>
-
-          <div>
-            <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-              Alasan Perubahan (Dicatat di Audit Log)
-            </label>
-            <textarea
-              value={kelayakanReason}
-              onChange={(e) => setKelayakanReason(e.target.value)}
-              rows={3}
-              placeholder="Contoh: Belum menyelesaikan administrasi berkas kelulusan"
-              className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
-            />
-          </div>
-
-          <div className="flex items-center justify-end gap-2 pt-3 border-t border-lp3i-neutral-border">
-            <button
-              type="button"
-              onClick={() => setIsKelayakanModalOpen(false)}
-              className="px-4 py-2 text-xs font-bold text-lp3i-neutral-muted hover:bg-lp3i-neutral-100 rounded-xl cursor-pointer"
-            >
-              Batal
-            </button>
-            <button
-              type="button"
-              onClick={handleToggleKelayakan}
-              className="px-5 py-2 text-xs font-bold text-white bg-lp3i-blue hover:bg-lp3i-blue-hover rounded-xl shadow-xs cursor-pointer"
-            >
-              Konfirmasi Perubahan Status
-            </button>
-          </div>
-        </div>
-      </Modal>
-
-      {/* CSV Import Modal with Summary Breakdown */}
+      {/* CSV Import Modal */}
       <Modal
         isOpen={isImportModalOpen}
         onClose={() => setIsImportModalOpen(false)}
@@ -864,18 +846,18 @@ export const MahasiswaPage: React.FC = () => {
         maxWidth="max-w-2xl"
       >
         <div className="space-y-4">
-          <div className="flex items-center justify-between p-3.5 bg-lp3i-blue-light border border-lp3i-blue-200 rounded-xl text-xs">
-            <div className="flex items-center gap-2 text-lp3i-blue font-semibold">
+          <div className="flex items-center justify-between p-3.5 bg-[#EAF1F6] border border-blue-200 rounded-xl text-xs">
+            <div className="flex items-center gap-2 text-[#11446E] font-semibold">
               <FileSpreadsheet className="w-4 h-4 flex-shrink-0" />
-              <span>Gunakan format template resmi untuk menghindari kesalahan baris.</span>
+              <span>Gunakan 4 program studi resmi: Manajemen Informatika, Hubungan Masyarakat, Komputerisasi Akuntansi, Administrasi Bisnis.</span>
             </div>
             <button
               type="button"
               onClick={handleDownloadTemplate}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white font-bold rounded-lg transition-colors cursor-pointer"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#11446E] hover:bg-[#0C3556] text-white font-bold rounded-lg transition-colors cursor-pointer flex-shrink-0 ml-2"
             >
               <Download className="w-3.5 h-3.5" />
-              <span>Unduh Template CSV</span>
+              <span>Unduh Template</span>
             </button>
           </div>
 
@@ -887,7 +869,7 @@ export const MahasiswaPage: React.FC = () => {
               type="file"
               accept=".csv"
               onChange={handleCsvChange}
-              className="w-full text-xs text-lp3i-neutral-900 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-lp3i-neutral-100 file:text-lp3i-blue hover:file:bg-lp3i-blue-light cursor-pointer border border-lp3i-neutral-border rounded-xl p-2 bg-lp3i-neutral-50"
+              className="w-full text-xs text-lp3i-neutral-900 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-xs file:font-bold file:bg-lp3i-neutral-100 file:text-[#11446E] hover:file:bg-[#EAF1F6] cursor-pointer border border-lp3i-neutral-border rounded-xl p-2 bg-lp3i-neutral-50"
             />
           </div>
 
@@ -901,10 +883,10 @@ export const MahasiswaPage: React.FC = () => {
           {parsedRows.length > 0 && !importResult && (
             <div className="p-3.5 bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl text-xs space-y-1">
               <p className="font-bold text-lp3i-neutral-900">
-                Terdeteksi {parsedRows.length} baris data wisudawan siap diproses.
+                Terdeteksi {parsedRows.length} baris data wisudawan siap divalidasi.
               </p>
               <p className="text-[11px] text-lp3i-neutral-muted">
-                Contoh Baris 1: NIM {parsedRows[0].nim || parsedRows[0].NIM} - {parsedRows[0].nama || parsedRows[0].Nama} ({parsedRows[0].prodi || parsedRows[0].Prodi})
+                Baris 1: NIM {parsedRows[0].nim || parsedRows[0].NIM} - {parsedRows[0].nama || parsedRows[0].Nama} ({parsedRows[0].prodi || parsedRows[0].Prodi})
               </p>
             </div>
           )}
@@ -930,7 +912,7 @@ export const MahasiswaPage: React.FC = () => {
               {importResult.errors && importResult.errors.length > 0 && (
                 <div className="max-h-48 overflow-y-auto border border-lp3i-status-error-border rounded-xl divide-y divide-lp3i-status-error-border">
                   <div className="p-2 bg-lp3i-status-error-bg text-lp3i-status-error text-[11px] font-bold">
-                    Daftar Baris Bermasalah:
+                    Daftar Baris Ditolak:
                   </div>
                   {importResult.errors.map((errItem: any, idx: number) => (
                     <div key={idx} className="p-2 text-xs bg-white text-lp3i-neutral-700 flex items-center justify-between">
@@ -958,7 +940,7 @@ export const MahasiswaPage: React.FC = () => {
                 type="button"
                 onClick={handleImportSubmit}
                 disabled={parsedRows.length === 0 || importLoading}
-                className="px-5 py-2 text-xs font-bold text-white bg-lp3i-blue hover:bg-lp3i-blue-hover rounded-xl shadow-xs disabled:opacity-50 cursor-pointer"
+                className="px-5 py-2 text-xs font-bold text-white bg-[#11446E] hover:bg-[#0C3556] rounded-xl shadow-xs disabled:opacity-50 cursor-pointer"
               >
                 {importLoading ? 'Memproses Impor...' : `Impor ${parsedRows.length} Data`}
               </button>

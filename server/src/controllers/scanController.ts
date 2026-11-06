@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma.js';
 import { createAuditLog } from '../utils/audit.js';
+import { broadcastAttendanceScan, maskNim } from '../services/presenceService.js';
 
 /**
  * Primary Attendance Scanner Endpoint
@@ -220,6 +221,19 @@ export async function processScan(req: Request, res: Response) {
       ipAddress: req.ip,
     });
 
+    // Real-Time Broadcast to Live Wisuda Presence Monitors
+    broadcastAttendanceScan({
+      id: result.absensi.id,
+      nama: mahasiswa.nama,
+      nim_masked: maskNim(mahasiswa.nim),
+      prodi: mahasiswa.prodi,
+      waktu_absen: result.absensi.waktu_absen,
+      sesi_id: sesi.id,
+      nama_sesi: sesi.nama_sesi,
+      status: 'HADIR',
+      timestamp: new Date().toISOString(),
+    });
+
     return res.status(201).json({
       success: true,
       status: 'SUCCESS',
@@ -343,6 +357,19 @@ export async function processManual(req: Request, res: Response) {
       entityId: newAbsensi.id,
       reason: `Absensi manual oleh petugas untuk ${mahasiswa.nama} (${mahasiswa.nim}). Catatan: ${catatan || 'Input NIM'}`,
       ipAddress: req.ip,
+    });
+
+    // Real-Time Broadcast to Live Wisuda Presence Monitors
+    broadcastAttendanceScan({
+      id: newAbsensi.id,
+      nama: mahasiswa.nama,
+      nim_masked: maskNim(mahasiswa.nim),
+      prodi: mahasiswa.prodi,
+      waktu_absen: newAbsensi.waktu_absen,
+      sesi_id: sesi.id,
+      nama_sesi: sesi.nama_sesi,
+      status: 'HADIR',
+      timestamp: new Date().toISOString(),
     });
 
     return res.status(201).json({

@@ -26,8 +26,15 @@ import * as absensiCtrl from '../controllers/absensiController.js';
 import * as reportCtrl from '../controllers/reportController.js';
 import * as userCtrl from '../controllers/userController.js';
 import * as auditCtrl from '../controllers/auditController.js';
+import * as presenceCtrl from '../controllers/presenceController.js';
 
 const router = Router();
+
+// ==================== PUBLIC LIVE PRESENCE (NO LOGIN REQUIRED) ====================
+// Dedicated read-only endpoints for Wisuda Presence live monitor
+router.get('/public/presence/info', presenceCtrl.getPresenceInfo);
+router.get('/public/presence/stream', presenceCtrl.streamPresence);
+router.get('/public/presence/feed', presenceCtrl.getPresenceFeed);
 
 // ==================== AUTHENTICATION ====================
 router.post('/auth/login', validateBody(LoginSchema), authCtrl.login);
@@ -75,6 +82,7 @@ router.delete(
 
 // ==================== MAHASISWA ====================
 router.get('/mahasiswa', authenticate, mhsCtrl.getAll);
+router.get('/mahasiswa/export-csv', authenticate, mhsCtrl.exportCsv);
 router.get('/mahasiswa/:id', authenticate, mhsCtrl.getById);
 router.post(
   '/mahasiswa',

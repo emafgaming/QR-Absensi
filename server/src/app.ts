@@ -62,6 +62,17 @@ const authLimiter = rateLimitMiddleware({
 
 app.use('/api/v1/auth/login', authLimiter);
 
+// Rate limiting for public presence live monitor
+const publicPresenceLimiter = rateLimitMiddleware({
+  windowMs: 1 * 60 * 1000, // 1 minute
+  max: 300, // 300 requests per min (ample for polling and SSE)
+  message: {
+    success: false,
+    message: 'Terlalu banyak permintaan pemantauan dari IP ini. Silakan coba lagi nanti.',
+  },
+});
+app.use('/api/v1/public/presence', publicPresenceLimiter);
+
 // Health check endpoint
 app.get('/api/v1/health', async (req, res) => {
   let dbStatus = 'disconnected';

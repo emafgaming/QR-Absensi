@@ -7,6 +7,22 @@ export default {
   theme: {
     extend: {
       colors: {
+        // Live Presence UI Index LP3I Official Reference Palette
+        presence: {
+          navy: '#11446E',
+          'navy-dark': '#0C3556',
+          'blue-sec': '#1B5A89',
+          'blue-light': '#EAF1F6',
+          white: '#FFFFFF',
+          bg: '#F7F9FB',
+          surface: '#EEF1F4',
+          text: '#17212B',
+          muted: '#637181',
+          border: '#DCE3E9',
+          success: '#16834A',
+          warning: '#D99B28',
+          error: '#C63838',
+        },
         // LP3I Inspired Professional Institutional Design Tokens
         lp3i: {
           blue: {

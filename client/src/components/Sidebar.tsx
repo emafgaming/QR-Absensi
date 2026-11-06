@@ -14,6 +14,7 @@ import {
   ChevronRight,
   LogOut,
   X,
+  Radio,
 } from 'lucide-react';
 import { useAuth, Role } from '../context/AuthContext.js';
 
@@ -29,9 +30,16 @@ interface NavItem {
 const navItems: NavItem[] = [
   {
     title: 'Dashboard',
-    path: '/',
+    path: '/dashboard',
     icon: LayoutDashboard,
     roles: ['SUPERADMIN', 'ADMIN_PANITIA', 'PETUGAS', 'VIEWER'],
+  },
+  {
+    title: 'Wisuda Presence',
+    path: '/',
+    icon: Radio,
+    roles: ['SUPERADMIN', 'ADMIN_PANITIA', 'PETUGAS', 'VIEWER'],
+    badge: 'MONITOR',
   },
   {
     title: 'Scan Absensi',

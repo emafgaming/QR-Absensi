@@ -3,6 +3,21 @@
 @tailwind utilities;
 
 :root {
+  /* LP3I Reference Palette Tokens */
+  --presence-navy: #11446E;
+  --presence-navy-dark: #0C3556;
+  --presence-blue-sec: #1B5A89;
+  --presence-blue-light: #EAF1F6;
+  --presence-white: #FFFFFF;
+  --presence-bg: #F7F9FB;
+  --presence-surface: #EEF1F4;
+  --presence-text: #17212B;
+  --presence-muted: #637181;
+  --presence-border: #DCE3E9;
+  --presence-success: #16834A;
+  --presence-warning: #D99B28;
+  --presence-error: #C63838;
+
   --lp3i-blue: #30347F;
   --lp3i-blue-hover: #252963;
   --lp3i-blue-light: #EEF0FA;

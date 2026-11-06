@@ -1,5 +1,5 @@
 import React from 'react';
-import { Menu, ShieldCheck, GraduationCap } from 'lucide-react';
+import { Menu, ShieldCheck, GraduationCap, Radio } from 'lucide-react';
 import { ConnectionBadge } from './ConnectionBadge.js';
 import { useAuth } from '../context/AuthContext.js';
 
@@ -32,6 +32,18 @@ export const Navbar: React.FC<NavbarProps> = ({ onToggleSidebar, pageTitle }) =>
       </div>
 
       <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
+        {/* Live Monitor Shortcut Button */}
+        <a
+          href="/"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#11446E] hover:bg-[#0C3556] text-white text-xs font-bold rounded-xl shadow-xs transition-colors"
+          title="Buka Layar Monitor Wisuda Presence di tab baru"
+        >
+          <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+          <span>Wisuda Presence</span>
+        </a>
+
         {/* Network status */}
         <ConnectionBadge />
 

@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { GraduationCap, Lock, User, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
 import { request } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.js';
@@ -34,7 +34,7 @@ export const LoginPage: React.FC = () => {
         if (res.data.user.role === 'PETUGAS') {
           navigate('/scan');
         } else {
-          navigate('/');
+          navigate('/dashboard');
         }
       } else {
         setError(res.message || 'Login gagal.');
@@ -160,7 +160,16 @@ export const LoginPage: React.FC = () => {
           </div>
         </div>
 
-        <p className="mt-4 text-center text-[11px] text-lp3i-blue-200">
+        <div className="mt-4 text-center">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-xs text-lp3i-blue-200 hover:text-white font-bold bg-white/10 hover:bg-white/20 px-4 py-2.5 rounded-xl transition-all border border-white/10"
+          >
+            <span>← Buka Layar Wisuda Presence (Live Monitor)</span>
+          </Link>
+        </div>
+
+        <p className="mt-3 text-center text-[11px] text-lp3i-blue-200">
           WisudaAttend — Terenkripsi & Dilindungi Kriptografi Token QR
         </p>
       </div>

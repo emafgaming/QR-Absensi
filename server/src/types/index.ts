@@ -37,15 +37,30 @@ export const UserUpdateSchema = z.object({
   password: z.string().min(6).optional(),
 });
 
+export const PRODI_OPTIONS = [
+  'Manajemen Informatika',
+  'Hubungan Masyarakat',
+  'Komputerisasi Akuntansi',
+  'Administrasi Bisnis',
+] as const;
+export type ProdiType = (typeof PRODI_OPTIONS)[number];
+
+export const ProdiEnum = z.enum(PRODI_OPTIONS, {
+  errorMap: () => ({
+    message:
+      'Program studi harus salah satu dari: Manajemen Informatika, Hubungan Masyarakat, Komputerisasi Akuntansi, Administrasi Bisnis',
+  }),
+});
+
 export const MahasiswaSchema = z.object({
   nim: z.string().min(3, 'NIM minimal 3 karakter'),
   nama: z.string().min(2, 'Nama minimal 2 karakter'),
-  prodi: z.string().min(2, 'Program studi wajib diisi'),
-  fakultas: z.string().min(2, 'Fakultas wajib diisi'),
-  angkatan: z.string().min(4, 'Angkatan wajib 4 karakter'),
-  status_kelayakan: StatusKelayakanEnum.default('ELIGIBLE'),
-  email: z.string().email().optional().or(z.literal('')),
-  no_hp: z.string().optional().or(z.literal('')),
+  prodi: ProdiEnum,
+  fakultas: z.string().optional().default('-'),
+  angkatan: z.string().optional().default(new Date().getFullYear().toString()),
+  status_kelayakan: StatusKelayakanEnum.optional().default('ELIGIBLE'),
+  email: z.string().email('Format email tidak valid').optional().or(z.literal('')).nullable(),
+  no_hp: z.string().optional().or(z.literal('')).nullable(),
 });
 
 export const MahasiswaUpdateSchema = MahasiswaSchema.partial();
