@@ -510,61 +510,6 @@ export const WisudaPresencePage: React.FC = () => {
 
         {/* 
           ----------------------------------------------------------------------
-          RINGKASAN KEHADIRAN (STATISTIK CEPAT)
-          ----------------------------------------------------------------------
-        */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-          <div className="bg-white p-4 rounded-2xl border border-[#DCE3E9] shadow-xs flex flex-col justify-between">
-            <span className="text-[11px] font-bold text-[#637181] uppercase tracking-wider">Total Terdaftar</span>
-            <div className="flex items-baseline justify-between mt-2">
-              <span className="text-2xl sm:text-3xl font-black text-[#17212B]">{stats.total_mahasiswa}</span>
-              <span className="text-xs font-semibold text-[#637181]">Wisudawan</span>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-[#DCE3E9] shadow-xs flex flex-col justify-between">
-            <span className="text-[11px] font-bold text-[#16834A] uppercase tracking-wider">Hadir di Lokasi</span>
-            <div className="flex items-baseline justify-between mt-2">
-              <span className="text-2xl sm:text-3xl font-black text-[#16834A]">{stats.total_hadir}</span>
-              <span className="text-xs font-semibold text-[#16834A]">Tervalidasi</span>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-[#DCE3E9] shadow-xs flex flex-col justify-between">
-            <span className="text-[11px] font-bold text-[#11446E] uppercase tracking-wider">Persentase Kehadiran</span>
-            <div className="mt-2">
-              <div className="flex items-baseline justify-between">
-                <span className="text-2xl sm:text-3xl font-black text-[#11446E]">
-                  {stats.persentase_kehadiran}%
-                </span>
-                <span className="text-xs font-semibold text-[#637181]">
-                  {stats.total_hadir}/{stats.total_mahasiswa}
-                </span>
-              </div>
-              <div className="w-full h-1.5 bg-[#EEF1F4] rounded-full mt-2 overflow-hidden">
-                <div
-                  className="h-full bg-[#11446E] rounded-full transition-all duration-500 ease-out"
-                  style={{ width: `${Math.min(100, Math.max(0, stats.persentase_kehadiran))}%` }}
-                />
-              </div>
-            </div>
-          </div>
-
-          <div className="bg-white p-4 rounded-2xl border border-[#DCE3E9] shadow-xs flex flex-col justify-between">
-            <span className="text-[11px] font-bold text-[#637181] uppercase tracking-wider">Waktu Pembaruan</span>
-            <div className="flex items-baseline justify-between mt-2">
-              <span className="text-sm sm:text-base font-bold text-[#17212B] truncate">
-                {currentTime}
-              </span>
-              <span className="text-[10px] text-[#16834A] font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                Live
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* 
-          ----------------------------------------------------------------------
           AREA HASIL SCAN TERBARU (MAIN CENTERPIECE PANEL - 2 DETIK)
           ----------------------------------------------------------------------
         */}
@@ -661,6 +606,61 @@ export const WisudaPresencePage: React.FC = () => {
             </div>
           )}
         </section>
+
+        {/* 
+          ----------------------------------------------------------------------
+          RINGKASAN KEHADIRAN (STATISTIK CEPAT)
+          ----------------------------------------------------------------------
+        */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
+          <div className="bg-white p-4 rounded-2xl border border-[#DCE3E9] shadow-xs flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-[#637181] uppercase tracking-wider">Total Terdaftar</span>
+            <div className="flex items-baseline justify-between mt-2">
+              <span className="text-2xl sm:text-3xl font-black text-[#17212B]">{stats.total_mahasiswa}</span>
+              <span className="text-xs font-semibold text-[#637181]">Wisudawan</span>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-[#DCE3E9] shadow-xs flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-[#16834A] uppercase tracking-wider">Hadir di Lokasi</span>
+            <div className="flex items-baseline justify-between mt-2">
+              <span className="text-2xl sm:text-3xl font-black text-[#16834A]">{stats.total_hadir}</span>
+              <span className="text-xs font-semibold text-[#16834A]">Tervalidasi</span>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-[#DCE3E9] shadow-xs flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-[#11446E] uppercase tracking-wider">Persentase Kehadiran</span>
+            <div className="mt-2">
+              <div className="flex items-baseline justify-between">
+                <span className="text-2xl sm:text-3xl font-black text-[#11446E]">
+                  {stats.persentase_kehadiran}%
+                </span>
+                <span className="text-xs font-semibold text-[#637181]">
+                  {stats.total_hadir}/{stats.total_mahasiswa}
+                </span>
+              </div>
+              <div className="w-full h-1.5 bg-[#EEF1F4] rounded-full mt-2 overflow-hidden">
+                <div
+                  className="h-full bg-[#11446E] rounded-full transition-all duration-500 ease-out"
+                  style={{ width: `${Math.min(100, Math.max(0, stats.persentase_kehadiran))}%` }}
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="bg-white p-4 rounded-2xl border border-[#DCE3E9] shadow-xs flex flex-col justify-between">
+            <span className="text-[11px] font-bold text-[#637181] uppercase tracking-wider">Waktu Pembaruan</span>
+            <div className="flex items-baseline justify-between mt-2">
+              <span className="text-sm sm:text-base font-bold text-[#17212B] truncate">
+                {currentTime}
+              </span>
+              <span className="text-[10px] text-[#16834A] font-bold bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
+                Live
+              </span>
+            </div>
+          </div>
+        </div>
 
         {/* 
           ----------------------------------------------------------------------
