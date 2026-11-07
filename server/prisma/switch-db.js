@@ -18,6 +18,7 @@ if (!mode) {
   if (dbUrl.startsWith('postgres')) mode = 'postgres';
   else if (dbUrl.startsWith('mysql')) mode = 'mysql';
   else if (dbUrl.startsWith('file:') || dbUrl.startsWith('sqlite:')) mode = 'sqlite';
+  else if (process.env.VERCEL || process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.NODE_ENV === 'production') mode = 'postgres';
   else mode = 'sqlite';
 }
 console.log(`Setting database mode to: ${mode}`);

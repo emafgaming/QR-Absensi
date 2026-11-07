@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "npm run build",
+  "buildCommand": "node server/prisma/switch-db.js postgres && npm run build",
   "outputDirectory": "dist",
   "rewrites": [
     {

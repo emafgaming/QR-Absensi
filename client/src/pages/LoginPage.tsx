@@ -37,7 +37,9 @@ export const LoginPage: React.FC = () => {
           navigate('/dashboard');
         }
       } else {
-        setError(res.message || 'Login gagal.');
+        console.error('Login failed:', res);
+        const detailedMsg = (res as any).error ? `${res.message} [Detail: ${(res as any).error}]` : (res.message || 'Login gagal.');
+        setError(detailedMsg);
       }
     } catch (err: any) {
       setError(err.message || 'Gagal terhubung ke server.');
