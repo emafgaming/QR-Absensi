@@ -101,43 +101,27 @@ async function main() {
   }
   console.log(`-> Sesi Aktif: "${sesi.nama_sesi}" (${event.nama_event})`);
 
-  // 3. Clean up any dummy test records (NIM starting with TEST or NIM-)
-  const deletedTest = await prisma.mahasiswa.deleteMany({
-    where: {
-      OR: [
-        { nim: { startsWith: 'TEST-' } },
-        { nim: { startsWith: 'TEST_' } },
-        { nim: { startsWith: 'NIM-' } },
-        { nim: { startsWith: 'FAIL-' } },
-      ],
-    },
-  });
-  if (deletedTest.count > 0) {
-    console.log(`-> Membersihkan ${deletedTest.count} data uji sementara.`);
-  }
+  // 3. Clean up all existing attendance, QR codes, and student records for a clean slate
+  console.log('-> Menghapus semua data presensi dan QR code mahasiswa...');
+  await prisma.absensi.deleteMany({});
+  await prisma.qrCode.deleteMany({});
+  const deletedMhs = await prisma.mahasiswa.deleteMany({});
+  console.log(`-> Berhasil membersihkan ${deletedMhs.count} data mahasiswa lama.`);
 
-  // 4. Import Real Students from real_students.json (from 'data mahasiswa.xls')
+  // 4. Import Real Students from real_students.json (from 'Rekap IPK Mahasiswa Angkatan 2024.xls')
   const jsonPath = path.resolve(__dirname, 'real_students.json');
   if (fs.existsSync(jsonPath)) {
     const rawData = fs.readFileSync(jsonPath, 'utf8');
     const students: any[] = JSON.parse(rawData);
 
-    console.log(`Memproses impor ${students.length} data mahasiswa resmi dari 'data mahasiswa.xls'...`);
+    console.log(`Memproses impor ${students.length} data mahasiswa resmi dari 'Rekap IPK Mahasiswa Angkatan 2024.xls'...`);
 
     let importedCount = 0;
     let qrCreatedCount = 0;
 
     for (const s of students) {
-      const mhs = await prisma.mahasiswa.upsert({
-        where: { nim: s.nim },
-        update: {
-          nama: s.nama,
-          prodi: s.prodi,
-          angkatan: s.angkatan || '2024',
-          fakultas: s.fakultas || '-',
-          status_kelayakan: s.status_kelayakan || 'ELIGIBLE',
-        },
-        create: {
+      const mhs = await prisma.mahasiswa.create({
+        data: {
           nim: s.nim,
           nama: s.nama,
           prodi: s.prodi,
@@ -148,25 +132,19 @@ async function main() {
       });
       importedCount++;
 
-      // Check or create active QR code for this student in the active session
-      const existingQr = await prisma.qrCode.findFirst({
-        where: { mahasiswa_id: mhs.id, sesi_id: sesi.id, status: 'ACTIVE' },
+      // Create active QR code for this student in the active session
+      await prisma.qrCode.create({
+        data: {
+          mahasiswa_id: mhs.id,
+          sesi_id: sesi.id,
+          token: generateSecureToken(),
+          status: 'ACTIVE',
+        },
       });
-
-      if (!existingQr) {
-        await prisma.qrCode.create({
-          data: {
-            mahasiswa_id: mhs.id,
-            sesi_id: sesi.id,
-            token: generateSecureToken(),
-            status: 'ACTIVE',
-          },
-        });
-        qrCreatedCount++;
-      }
+      qrCreatedCount++;
     }
 
-    console.log(`-> Berhasil menyiapkan ${importedCount} data mahasiswa resmi.`);
+    console.log(`-> Berhasil mengimpor ${importedCount} data mahasiswa resmi.`);
     console.log(`-> Berhasil menerbitkan ${qrCreatedCount} QR code aktif baru.`);
   } else {
     console.warn('-> Berkas real_students.json tidak ditemukan.');
