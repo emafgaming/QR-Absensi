@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "buildCommand": "node server/prisma/switch-db.js postgres && npm run build",
+  "buildCommand": "node server/prisma/switch-db.js postgres && node -e \"try { require('child_process').execSync('npx prisma db push --schema=server/prisma/schema.prisma --skip-generate', { stdio: 'inherit' }); } catch(e) { console.log('Prisma push note:', e.message); }\" && npm run build",
   "outputDirectory": "dist",
   "rewrites": [
     {

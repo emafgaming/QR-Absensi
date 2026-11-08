@@ -105,6 +105,12 @@ router.delete(
   mhsCtrl.remove
 );
 router.post(
+  '/mahasiswa/sync-2024',
+  authenticate,
+  requireRole(['SUPERADMIN', 'ADMIN_PANITIA']),
+  mhsCtrl.syncMahasiswa2024
+);
+router.post(
   '/mahasiswa/import-csv',
   authenticate,
   requireRole(['SUPERADMIN', 'ADMIN_PANITIA']),

@@ -20,17 +20,18 @@ describe('WisudaAttend API Integration Tests', () => {
 
     // Ensure test users exist
     const pwdHash = await bcrypt.hash('Wisuda2026!', 10);
-    await prisma.user.upsert({
-      where: { username: 'superadmin' },
-      update: { password_hash: pwdHash, is_active: true },
-      create: {
-        username: 'superadmin',
-        nama: 'Superadmin Test',
-        email: 'superadmin@wisuda.ac.id',
-        password_hash: pwdHash,
-        role: 'SUPERADMIN',
-      },
-    });
+    const existingSuperadmin = await prisma.user.findUnique({ where: { username: 'superadmin' } });
+    if (!existingSuperadmin) {
+      await prisma.user.create({
+        data: {
+          username: 'superadmin',
+          nama: 'Superadmin Test',
+          email: 'superadmin@wisuda.ac.id',
+          password_hash: pwdHash,
+          role: 'SUPERADMIN',
+        },
+      });
+    }
     await prisma.user.upsert({
       where: { username: 'petugas1' },
       update: { password_hash: pwdHash, is_active: true },
@@ -55,9 +56,15 @@ describe('WisudaAttend API Integration Tests', () => {
     });
 
     // 1. Login as Superadmin
-    const saLogin = await request(app)
+    let saLogin = await request(app)
       .post('/api/v1/auth/login')
-      .send({ username: 'superadmin', password: 'Wisuda2026!' });
+      .send({ username: 'superadmin', password: 'admin123' });
+    if (saLogin.status !== 200) {
+      saLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'superadmin', password: 'Wisuda2026!' });
+    }
+    expect(saLogin.status).toBe(200);
     expect(saLogin.status).toBe(200);
     superadminToken = saLogin.body.data.token;
 

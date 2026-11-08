@@ -18,6 +18,7 @@ import {
   Sparkles,
   Info,
   AlertTriangle,
+  RefreshCw,
 } from 'lucide-react';
 import Papa from 'papaparse';
 import { request } from '../api/client.js';
@@ -278,6 +279,28 @@ export const MahasiswaPage: React.FC = () => {
     }
   };
 
+  const [syncLoading, setSyncLoading] = useState(false);
+  const handleSync2024 = async () => {
+    if (
+      !window.confirm(
+        'Sinkronkan seluruh 77 data mahasiswa resmi Angkatan 2024 dari Rekap IPK ke database? Data non-resmi di luar 4 program studi resmi akan dibersihkan.'
+      )
+    )
+      return;
+    setSyncLoading(true);
+    try {
+      const res = await request('/mahasiswa/sync-2024', { method: 'POST' });
+      if (res.success) {
+        triggerNotification(res.message);
+        fetchMahasiswa();
+      }
+    } catch (err: any) {
+      alert(err.message || 'Gagal menyinkronkan data mahasiswa 2024.');
+    } finally {
+      setSyncLoading(false);
+    }
+  };
+
   // Download Sample Official CSV Template
   const handleDownloadTemplate = () => {
     const csvContent =
@@ -416,6 +439,16 @@ export const MahasiswaPage: React.FC = () => {
               >
                 <Upload className="w-4 h-4 text-[#11446E]" />
                 <span>Impor CSV</span>
+              </button>
+
+              <button
+                onClick={handleSync2024}
+                disabled={syncLoading}
+                className="inline-flex items-center justify-center gap-2 px-3.5 sm:px-4 py-2 bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer flex-1 sm:flex-none disabled:opacity-50"
+                title="Sinkronkan 77 data mahasiswa resmi Angkatan 2024 dari Rekap IPK ke database"
+              >
+                <RefreshCw className={`w-4 h-4 ${syncLoading ? 'animate-spin' : ''}`} />
+                <span>{syncLoading ? 'Menyinkronkan...' : 'Sinkron 77 Mhs 2024'}</span>
               </button>
 
               <button

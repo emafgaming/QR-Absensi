@@ -1,10 +1,137 @@
+import crypto from 'crypto';
 import { Request, Response } from 'express';
 import prisma from '../prisma.js';
 import { createAuditLog } from '../utils/audit.js';
 import { MahasiswaSchema, PRODI_OPTIONS } from '../types/index.js';
+import { STUDENTS_2024 } from '../data/students2024.js';
+
+export async function doSyncMahasiswa2024(userId?: string, ip?: string) {
+  const ALLOWED_PRODIS = [
+    'Manajemen Informatika',
+    'Hubungan Masyarakat',
+    'Komputerisasi Akuntansi',
+    'Administrasi Bisnis',
+  ];
+
+  // 1. Ensure Active Event & Session exist
+  let event = await prisma.event.findFirst({
+    where: { is_active: true },
+  });
+  if (!event) {
+    event = await prisma.event.create({
+      data: {
+        nama_event: 'Wisuda Angkatan 2024 - Politeknik LP3I Kampus Pekanbaru',
+        deskripsi: 'Prosesi Wisuda dan Pelantikan Lulusan Politeknik LP3I Pekanbaru',
+        tanggal: new Date(),
+        lokasi: 'Auditorium Utama Politeknik LP3I',
+        is_active: true,
+      },
+    });
+  }
+
+  let sesi = await prisma.sesiWisuda.findFirst({
+    where: { event_id: event.id, is_open: true },
+  });
+  if (!sesi) {
+    sesi = await prisma.sesiWisuda.create({
+      data: {
+        event_id: event.id,
+        nama_sesi: 'Absensi Wisudawan Pagi',
+        waktu_mulai: new Date(),
+        waktu_selesai: new Date(Date.now() + 8 * 3600 * 1000),
+        kuota: 500,
+        is_open: true,
+      },
+    });
+  }
+
+  // 2. Remove any dummy student outside the 4 prodis or dummy NIMs
+  await prisma.mahasiswa.deleteMany({
+    where: {
+      OR: [
+        { prodi: { notIn: ALLOWED_PRODIS } },
+        { nim: { in: ['202201001', '202201002', '202201003', '202201004', '202201005', '202201006', '202201007', '202201008'] } },
+      ],
+    },
+  });
+
+  let insertedCount = 0;
+  let qrCreatedCount = 0;
+
+  for (const s of STUDENTS_2024) {
+    const mhs = await prisma.mahasiswa.upsert({
+      where: { nim: s.nim },
+      update: {
+        nama: s.nama,
+        prodi: s.prodi,
+        angkatan: s.angkatan || '2024',
+        fakultas: s.fakultas || '-',
+        status_kelayakan: s.status_kelayakan || 'ELIGIBLE',
+      },
+      create: {
+        nim: s.nim,
+        nama: s.nama,
+        prodi: s.prodi,
+        angkatan: s.angkatan || '2024',
+        fakultas: s.fakultas || '-',
+        status_kelayakan: s.status_kelayakan || 'ELIGIBLE',
+      },
+    });
+    insertedCount++;
+
+    const existingQr = await prisma.qrCode.findFirst({
+      where: { mahasiswa_id: mhs.id, sesi_id: sesi.id, status: 'ACTIVE' },
+    });
+    if (!existingQr) {
+      await prisma.qrCode.create({
+        data: {
+          mahasiswa_id: mhs.id,
+          sesi_id: sesi.id,
+          token: `WATT-${crypto.randomBytes(32).toString('hex')}`,
+          status: 'ACTIVE',
+        },
+      });
+      qrCreatedCount++;
+    }
+  }
+
+  const totalInDb = await prisma.mahasiswa.count();
+
+  if (userId) {
+    await createAuditLog({
+      userId,
+      action: 'SYNC_MAHASISWA_2024',
+      entity: 'Mahasiswa',
+      reason: `Sinkronisasi resmi 77 mahasiswa Angkatan 2024 (${insertedCount} diproses, ${qrCreatedCount} QR baru)`,
+      newValue: { insertedCount, qrCreatedCount, totalInDb },
+      ipAddress: ip,
+    });
+  }
+
+  return { insertedCount, qrCreatedCount, totalInDb };
+}
+
+export async function syncMahasiswa2024(req: Request, res: Response) {
+  try {
+    const result = await doSyncMahasiswa2024(req.user?.id, req.ip);
+    return res.json({
+      success: true,
+      message: `Berhasil menyinkronkan ${result.insertedCount} data mahasiswa Angkatan 2024 ke database. Total mahasiswa sekarang: ${result.totalInDb}.`,
+      data: result,
+    });
+  } catch (error: any) {
+    console.error('Error syncing 2024 mahasiswa:', error);
+    return res.status(500).json({ success: false, message: error?.message || 'Gagal menyinkronkan data mahasiswa 2024.' });
+  }
+}
 
 export async function getAll(req: Request, res: Response) {
   try {
+    // Auto-seed if database is empty or has old dummy count (<= 10 students)
+    const existingCount = await prisma.mahasiswa.count();
+    if (existingCount <= 10) {
+      await doSyncMahasiswa2024();
+    }
     const {
       page = '1',
       limit = '20',

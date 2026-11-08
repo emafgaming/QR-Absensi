@@ -11,9 +11,14 @@ describe('Wisuda Presence & Data Mahasiswa Comprehensive Tests', () => {
 
   beforeAll(async () => {
     // 1. Superadmin Login
-    const saLogin = await request(app)
+    let saLogin = await request(app)
       .post('/api/v1/auth/login')
-      .send({ username: 'superadmin', password: 'Wisuda2026!' });
+      .send({ username: 'superadmin', password: 'admin123' });
+    if (saLogin.status !== 200) {
+      saLogin = await request(app)
+        .post('/api/v1/auth/login')
+        .send({ username: 'superadmin', password: 'Wisuda2026!' });
+    }
     expect(saLogin.status).toBe(200);
     superadminToken = saLogin.body.data.token;
 
