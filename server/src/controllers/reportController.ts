@@ -55,24 +55,34 @@ export async function getDashboardStats(req: Request, res: Response) {
     const belumHadir = Math.max(0, totalEligible - totalRecorded);
     const persentaseKehadiran = totalEligible > 0 ? ((totalRecorded / totalEligible) * 100).toFixed(1) : '0';
 
-    // Per-prodi breakdown
-    const prodiStats = await Promise.all(
-      allProdi.map(async (group) => {
-        const hadirCount = await prisma.absensi.count({
-          where: {
-            ...attendanceWhere,
-            mahasiswa: { prodi: group.prodi },
-          },
-        });
-        return {
-          prodi: group.prodi,
-          fakultas: group.fakultas,
-          total: group._count.id,
-          hadir: hadirCount,
-          persen: group._count.id > 0 ? ((hadirCount / group._count.id) * 100).toFixed(1) : '0',
-        };
-      })
-    );
+    // Per-prodi breakdown: Single optimized query instead of N+1 individual count queries
+    const attendedStudents = await prisma.absensi.findMany({
+      where: attendanceWhere,
+      select: {
+        mahasiswa: {
+          select: { prodi: true },
+        },
+      },
+    });
+
+    const prodiHadirCountMap = new Map<string, number>();
+    for (const record of attendedStudents) {
+      const p = record.mahasiswa?.prodi;
+      if (p) {
+        prodiHadirCountMap.set(p, (prodiHadirCountMap.get(p) || 0) + 1);
+      }
+    }
+
+    const prodiStats = allProdi.map((group) => {
+      const hadirCount = prodiHadirCountMap.get(group.prodi) || 0;
+      return {
+        prodi: group.prodi,
+        fakultas: group.fakultas,
+        total: group._count.id,
+        hadir: hadirCount,
+        persen: group._count.id > 0 ? ((hadirCount / group._count.id) * 100).toFixed(1) : '0',
+      };
+    });
 
     return res.json({
       success: true,

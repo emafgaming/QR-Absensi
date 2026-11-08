@@ -8,9 +8,10 @@ export function validateBody(schema: ZodSchema) {
       next();
     } catch (error) {
       if (error instanceof ZodError) {
+        const primaryMessage = error.errors[0]?.message || 'Validasi data gagal';
         return res.status(400).json({
           success: false,
-          message: 'Validasi data gagal',
+          message: primaryMessage,
           errors: error.errors.map(err => ({
             field: err.path.join('.'),
             message: err.message,

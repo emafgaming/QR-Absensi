@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import {
   QrCode,
   Printer,
@@ -15,7 +16,7 @@ import {
   CheckSquare,
   Square,
 } from 'lucide-react';
-import { request } from '../api/client.js';
+import { request, CACHE_TTL } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.js';
 import { Modal } from '../components/Modal.js';
 import { SkeletonQrCards } from '../components/Skeleton.js';
@@ -23,9 +24,12 @@ import { SkeletonQrCards } from '../components/Skeleton.js';
 export const QrGeneratorPage: React.FC = () => {
   const { hasRole } = useAuth();
   const canGenerate = hasRole(['SUPERADMIN', 'ADMIN_PANITIA']);
+  const location = useLocation();
 
   const [sessions, setSessions] = useState<any[]>([]);
-  const [selectedSesiId, setSelectedSesiId] = useState<string>('');
+  const [selectedSesiId, setSelectedSesiId] = useState<string>(() => {
+    return sessionStorage.getItem('watt_selected_sesi_id') || '';
+  });
   const [cards, setCards] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
@@ -48,21 +52,43 @@ export const QrGeneratorPage: React.FC = () => {
   // Single card view modal
   const [viewCard, setViewCard] = useState<any>(null);
 
-  // Fetch Sessions
+  // Fetch Sessions and preserve user selection across navigations
   useEffect(() => {
     async function loadSessions() {
       try {
-        const res = await request('/sesi');
+        const res = await request('/sesi', {
+          cacheTtl: CACHE_TTL.SEMI_STABLE,
+          cacheTags: ['sesi'],
+        });
         if (res.success && res.data.length > 0) {
           setSessions(res.data);
-          setSelectedSesiId(res.data[0].id);
+
+          // Priority 1: Navigation state (e.g. from AcaraPage)
+          const navSesiId = (location.state as any)?.sesi_id;
+          // Priority 2: Session remembered in sessionStorage
+          const savedSesiId = sessionStorage.getItem('watt_selected_sesi_id');
+
+          const validNav = navSesiId && res.data.some((s: any) => s.id === navSesiId);
+          const validSaved = savedSesiId && res.data.some((s: any) => s.id === savedSesiId);
+
+          if (validNav) {
+            setSelectedSesiId(navSesiId);
+            sessionStorage.setItem('watt_selected_sesi_id', navSesiId);
+          } else if (validSaved) {
+            setSelectedSesiId(savedSesiId);
+          } else {
+            const openSesi = res.data.find((s: any) => s.is_open);
+            const defaultId = openSesi ? openSesi.id : res.data[0].id;
+            setSelectedSesiId(defaultId);
+            sessionStorage.setItem('watt_selected_sesi_id', defaultId);
+          }
         }
       } catch (e) {
-        console.error(e);
+        console.error('Error loading sessions:', e);
       }
     }
     loadSessions();
-  }, []);
+  }, [location.state]);
 
   // Fetch QR Cards for selected session
   const fetchCards = async () => {
@@ -226,7 +252,10 @@ export const QrGeneratorPage: React.FC = () => {
             <span className="text-xs font-bold text-lp3i-neutral-muted">Sesi:</span>
             <select
               value={selectedSesiId}
-              onChange={(e) => setSelectedSesiId(e.target.value)}
+              onChange={(e) => {
+                setSelectedSesiId(e.target.value);
+                sessionStorage.setItem('watt_selected_sesi_id', e.target.value);
+              }}
               className="text-xs font-bold bg-transparent text-lp3i-neutral-900 focus:outline-hidden cursor-pointer w-full sm:w-auto"
             >
               {sessions.map((s) => (

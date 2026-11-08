@@ -14,7 +14,7 @@ import {
   QrCode,
   ShieldCheck,
 } from 'lucide-react';
-import { request } from '../api/client.js';
+import { request, CACHE_TTL } from '../api/client.js';
 import { formatTime, formatDateTime } from '../utils/format.js';
 import { SkeletonDashboard } from '../components/Skeleton.js';
 
@@ -25,18 +25,22 @@ export const DashboardPage: React.FC = () => {
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchStats = async (sesiId: string = '') => {
+  const fetchStats = async (sesiId: string = '', skipCache: boolean = false) => {
     try {
       setError(null);
       const endpoint = sesiId ? `/reports/dashboard?sesi_id=${sesiId}` : '/reports/dashboard';
-      const res = await request(endpoint);
+      const res = await request(endpoint, {
+        cacheTtl: CACHE_TTL.DASHBOARD,
+        cacheTags: ['dashboard'],
+        skipCache,
+      });
       if (res.success) {
         setData(res.data);
       } else {
         setError(res.message || 'Gagal memuat data statistik.');
       }
     } catch (e: any) {
-      console.error(e);
+      console.error('Error fetching dashboard stats:', e);
       setError(e.message || 'Terjadi kesalahan saat menghubungi server.');
     } finally {
       setLoading(false);
@@ -48,14 +52,14 @@ export const DashboardPage: React.FC = () => {
     fetchStats(selectedSesi);
     // Auto-refresh dashboard stats every 15 seconds
     const interval = setInterval(() => {
-      fetchStats(selectedSesi);
+      fetchStats(selectedSesi, true);
     }, 15000);
     return () => clearInterval(interval);
   }, [selectedSesi]);
 
   const handleRefresh = () => {
     setRefreshing(true);
-    fetchStats(selectedSesi);
+    fetchStats(selectedSesi, true);
   };
 
   if (loading && !data) {

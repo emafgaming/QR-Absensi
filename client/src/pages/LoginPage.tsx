@@ -1,6 +1,14 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
-import { GraduationCap, Lock, User, ArrowRight, AlertCircle, ShieldCheck } from 'lucide-react';
+import {
+  GraduationCap,
+  Lock,
+  User,
+  ArrowRight,
+  AlertCircle,
+  Eye,
+  EyeOff,
+} from 'lucide-react';
 import { request } from '../api/client.js';
 import { useAuth } from '../context/AuthContext.js';
 
@@ -10,6 +18,7 @@ export const LoginPage: React.FC = () => {
 
   const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -94,7 +103,10 @@ export const LoginPage: React.FC = () => {
                 <input
                   type="text"
                   value={username}
-                  onChange={(e) => setUsername(e.target.value)}
+                  onChange={(e) => {
+                    setUsername(e.target.value);
+                    if (error) setError(null);
+                  }}
                   className="w-full pl-10 pr-4 py-2.5 bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl text-lp3i-neutral-900 placeholder-lp3i-neutral-muted focus:outline-hidden focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light transition-all text-xs font-medium"
                   placeholder="Masukkan username atau email"
                   required
@@ -111,13 +123,29 @@ export const LoginPage: React.FC = () => {
                   <Lock className="w-4 h-4" />
                 </div>
                 <input
-                  type="password"
+                  type={showPassword ? 'text' : 'password'}
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2.5 bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl text-lp3i-neutral-900 placeholder-lp3i-neutral-muted focus:outline-hidden focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light transition-all text-xs font-medium"
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                    if (error) setError(null);
+                  }}
+                  className="w-full pl-10 pr-10 py-2.5 bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl text-lp3i-neutral-900 placeholder-lp3i-neutral-muted focus:outline-hidden focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light transition-all text-xs font-medium"
                   placeholder="Masukkan kata sandi akun"
                   required
                 />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  aria-label={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                  title={showPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                  className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-lp3i-neutral-400 hover:text-lp3i-blue focus:outline-hidden focus:text-lp3i-blue transition-colors cursor-pointer"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-4 h-4 text-lp3i-neutral-600" />
+                  ) : (
+                    <Eye className="w-4 h-4 text-lp3i-neutral-400" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -139,8 +167,6 @@ export const LoginPage: React.FC = () => {
               )}
             </button>
           </form>
-
-
         </div>
 
         <div className="mt-4 text-center">

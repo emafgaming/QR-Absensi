@@ -76,6 +76,7 @@ model Mahasiswa {
   absensi  Absensi[]
 
   @@index([nim])
+  @@index([nama])
   @@index([prodi])
   @@index([status_kelayakan])
   @@map("mahasiswa")
@@ -112,6 +113,7 @@ model SesiWisuda {
   absensi  Absensi[]
 
   @@index([event_id])
+  @@index([waktu_mulai, waktu_selesai])
   @@map("sesi_wisuda")
 }
 
@@ -130,6 +132,7 @@ model QrCode {
 
   @@index([token])
   @@index([mahasiswa_id, sesi_id])
+  @@index([sesi_id, status])
   @@index([sesi_id])
   @@map("qr_codes")
 }
@@ -152,6 +155,8 @@ model Absensi {
   updated_at    DateTime    @updatedAt
 
   @@unique([mahasiswa_id, sesi_id])
+  @@index([sesi_id, status])
+  @@index([waktu_absen])
   @@index([sesi_id])
   @@index([mahasiswa_id])
   @@index([qr_code_id])
@@ -223,6 +228,7 @@ model Mahasiswa {
   absensi  Absensi[]
 
   @@index([nim])
+  @@index([nama])
   @@index([prodi])
   @@index([status_kelayakan])
   @@map("mahasiswa")
@@ -258,6 +264,8 @@ model SesiWisuda {
   qr_codes QrCode[]
   absensi  Absensi[]
 
+  @@index([event_id])
+  @@index([waktu_mulai, waktu_selesai])
   @@map("sesi_wisuda")
 }
 
@@ -276,6 +284,7 @@ model QrCode {
 
   @@index([token])
   @@index([mahasiswa_id, sesi_id])
+  @@index([sesi_id, status])
   @@map("qr_codes")
 }
 
@@ -297,6 +306,8 @@ model Absensi {
   updated_at    DateTime    @updatedAt
 
   @@unique([mahasiswa_id, sesi_id])
+  @@index([sesi_id, status])
+  @@index([waktu_absen])
   @@index([sesi_id])
   @@index([mahasiswa_id])
   @@map("absensi")
@@ -365,6 +376,7 @@ model Mahasiswa {
   absensi  Absensi[]
 
   @@index([nim])
+  @@index([nama])
   @@index([prodi])
   @@index([status_kelayakan])
   @@map("mahasiswa")
@@ -400,6 +412,8 @@ model SesiWisuda {
   qr_codes QrCode[]
   absensi  Absensi[]
 
+  @@index([event_id])
+  @@index([waktu_mulai, waktu_selesai])
   @@map("sesi_wisuda")
 }
 
@@ -418,6 +432,7 @@ model QrCode {
 
   @@index([token])
   @@index([mahasiswa_id, sesi_id])
+  @@index([sesi_id, status])
   @@map("qr_codes")
 }
 
@@ -439,6 +454,8 @@ model Absensi {
   updated_at    DateTime    @updatedAt
 
   @@unique([mahasiswa_id, sesi_id])
+  @@index([sesi_id, status])
+  @@index([waktu_absen])
   @@index([sesi_id])
   @@index([mahasiswa_id])
   @@map("absensi")

@@ -160,6 +160,36 @@ export async function syncMahasiswa2024(req: Request, res: Response) {
   }
 }
 
+function buildStudentSearchWhere(searchQuery: string) {
+  const normalized = searchQuery.trim().replace(/\s+/g, ' ');
+  if (!normalized) return null;
+
+  const isPostgres = (process.env.DATABASE_URL || '').startsWith('postgres');
+  const makeFilter = (field: string, term: string) =>
+    isPostgres ? { [field]: { contains: term, mode: 'insensitive' } } : { [field]: { contains: term } };
+
+  const words = normalized.split(' ').filter(Boolean);
+  if (words.length > 1) {
+    return {
+      AND: words.map((word) => ({
+        OR: [
+          makeFilter('nim', word),
+          makeFilter('nama', word),
+          makeFilter('prodi', word),
+        ],
+      })),
+    };
+  }
+
+  return {
+    OR: [
+      makeFilter('nim', normalized),
+      makeFilter('nama', normalized),
+      makeFilter('prodi', normalized),
+    ],
+  };
+}
+
 export async function getAll(req: Request, res: Response) {
   try {
     const {
@@ -178,11 +208,9 @@ export async function getAll(req: Request, res: Response) {
 
     const where: any = {};
 
-    if (search) {
-      where.OR = [
-        { nim: { contains: search } },
-        { nama: { contains: search } },
-      ];
+    const searchFilter = buildStudentSearchWhere(search);
+    if (searchFilter) {
+      Object.assign(where, searchFilter);
     }
 
     if (prodi) {
@@ -590,11 +618,9 @@ export async function exportCsv(req: Request, res: Response) {
   try {
     const { search = '', prodi = '' } = req.query as Record<string, string>;
     const where: any = {};
-    if (search) {
-      where.OR = [
-        { nim: { contains: search } },
-        { nama: { contains: search } },
-      ];
+    const searchFilter = buildStudentSearchWhere(search);
+    if (searchFilter) {
+      Object.assign(where, searchFilter);
     }
     if (prodi === 'PERLU_DIPERIKSA' || prodi === 'REVIEW_NEEDED') {
       where.prodi = { notIn: [...PRODI_OPTIONS] };

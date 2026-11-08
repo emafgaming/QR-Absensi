@@ -14,7 +14,13 @@ import {
   Calendar,
 } from 'lucide-react';
 import { request } from '../api/client.js';
-import { formatDate, formatTime } from '../utils/format.js';
+import {
+  formatDate,
+  formatTime,
+  toInputTime,
+  toInputDate,
+  combineDateAndTimeJakarta,
+} from '../utils/format.js';
 import { Modal } from '../components/Modal.js';
 import { useAuth } from '../context/AuthContext.js';
 import { SkeletonAcara } from '../components/Skeleton.js';
@@ -31,7 +37,7 @@ export const AcaraPage: React.FC = () => {
   const [eventFormData, setEventFormData] = useState({
     nama_event: '',
     deskripsi: '',
-    tanggal: new Date().toISOString().slice(0, 10),
+    tanggal: toInputDate(new Date()),
     lokasi: '',
     is_active: true,
   });
@@ -40,11 +46,12 @@ export const AcaraPage: React.FC = () => {
   // Sesi Modal
   const [isSesiModalOpen, setIsSesiModalOpen] = useState(false);
   const [targetEventForSesi, setTargetEventForSesi] = useState<any>(null);
+  const [editingSesiId, setEditingSesiId] = useState<string | null>(null);
   const [sesiFormData, setSesiFormData] = useState({
     nama_sesi: '',
     waktu_mulai: '07:30',
     waktu_selesai: '11:30',
-    kuota: 500,
+    kuota: '500',
     is_open: true,
   });
 
@@ -56,7 +63,7 @@ export const AcaraPage: React.FC = () => {
         setEvents(res.data);
       }
     } catch (e) {
-      console.error(e);
+      console.error('Error fetching events:', e);
     } finally {
       setLoading(false);
     }
@@ -88,32 +95,110 @@ export const AcaraPage: React.FC = () => {
     }
   };
 
-  // Submit Sesi Create
+  // Submit Sesi Create / Edit
   const handleSesiSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!targetEventForSesi) return;
-    try {
-      const today = new Date().toISOString().slice(0, 10);
-      const mulai = new Date(`${today}T${sesiFormData.waktu_mulai}:00Z`);
-      const selesai = new Date(`${today}T${sesiFormData.waktu_selesai}:00Z`);
 
-      await request('/sesi', {
-        method: 'POST',
-        body: JSON.stringify({
-          event_id: targetEventForSesi.id,
-          nama_sesi: sesiFormData.nama_sesi,
-          waktu_mulai: mulai,
-          waktu_selesai: selesai,
-          kuota: Number(sesiFormData.kuota),
-          is_open: sesiFormData.is_open,
-        }),
-      });
+    // Quota validation
+    const kuotaNum = parseInt(String(sesiFormData.kuota), 10);
+    if (!sesiFormData.kuota || isNaN(kuotaNum) || kuotaNum < 1) {
+      alert('Target kuota peserta harus bernilai minimal 1.');
+      return;
+    }
+
+    // Combine event's date with time in Asia/Jakarta timezone
+    const eventDate = targetEventForSesi.tanggal;
+    const mulaiIso = combineDateAndTimeJakarta(eventDate, sesiFormData.waktu_mulai);
+    const selesaiIso = combineDateAndTimeJakarta(eventDate, sesiFormData.waktu_selesai);
+
+    const startMs = new Date(mulaiIso).getTime();
+    const endMs = new Date(selesaiIso).getTime();
+
+    if (isNaN(startMs) || isNaN(endMs)) {
+      alert('Format waktu mulai atau selesai tidak valid.');
+      return;
+    }
+
+    if (endMs <= startMs) {
+      alert('Waktu selesai harus lebih besar dari waktu mulai.');
+      return;
+    }
+
+    // Local client-side overlap check for instant user feedback
+    const otherSessions = (targetEventForSesi.sesi || []).filter((s: any) => s.id !== editingSesiId);
+    const overlapping = otherSessions.find((s: any) => {
+      const sStart = new Date(s.waktu_mulai).getTime();
+      const sEnd = new Date(s.waktu_selesai).getTime();
+      return startMs < sEnd && sStart < endMs;
+    });
+
+    if (overlapping) {
+      alert(
+        `Jadwal sesi bertabrakan dengan ${overlapping.nama_sesi} (${formatTime(overlapping.waktu_mulai)}–${formatTime(overlapping.waktu_selesai)}). Silakan pilih waktu lain.`
+      );
+      return;
+    }
+
+    try {
+      if (editingSesiId) {
+        await request(`/sesi/${editingSesiId}`, {
+          method: 'PUT',
+          body: JSON.stringify({
+            nama_sesi: sesiFormData.nama_sesi.trim(),
+            waktu_mulai: mulaiIso,
+            waktu_selesai: selesaiIso,
+            kuota: kuotaNum,
+            is_open: sesiFormData.is_open,
+          }),
+        });
+      } else {
+        await request('/sesi', {
+          method: 'POST',
+          body: JSON.stringify({
+            event_id: targetEventForSesi.id,
+            nama_sesi: sesiFormData.nama_sesi.trim(),
+            waktu_mulai: mulaiIso,
+            waktu_selesai: selesaiIso,
+            kuota: kuotaNum,
+            is_open: sesiFormData.is_open,
+          }),
+        });
+      }
 
       setIsSesiModalOpen(false);
       fetchEvents();
     } catch (err: any) {
-      alert(err.message || 'Gagal menambahkan sesi.');
+      alert(err.message || 'Gagal menyimpan sesi wisuda.');
     }
+  };
+
+  // Open Create Sesi Modal
+  const handleOpenCreateSesi = (evt: any) => {
+    setTargetEventForSesi(evt);
+    setEditingSesiId(null);
+    setSesiFormData({
+      nama_sesi: `Sesi ${(evt.sesi?.length || 0) + 1}`,
+      waktu_mulai: '07:30',
+      waktu_selesai: '11:30',
+      kuota: '500',
+      is_open: true,
+    });
+    setIsSesiModalOpen(true);
+  };
+
+  // Open Edit Sesi Modal
+  const handleOpenEditSesi = (evt: any, s: any) => {
+    setTargetEventForSesi(evt);
+    setEditingSesiId(s.id);
+    setSesiFormData({
+      nama_sesi: s.nama_sesi || '',
+      waktu_mulai: toInputTime(s.waktu_mulai),
+      waktu_selesai: toInputTime(s.waktu_selesai),
+      kuota: String(s.kuota || 500),
+      is_open: s.is_open ?? true,
+    });
+    setIsSesiModalOpen(true);
   };
 
   // Toggle Sesi Open/Close
@@ -135,7 +220,7 @@ export const AcaraPage: React.FC = () => {
     setEventFormData({
       nama_event: evt.nama_event || '',
       deskripsi: evt.deskripsi || '',
-      tanggal: evt.tanggal ? new Date(evt.tanggal).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      tanggal: toInputDate(evt.tanggal),
       lokasi: evt.lokasi || '',
       is_active: evt.is_active ?? true,
     });
@@ -163,10 +248,18 @@ export const AcaraPage: React.FC = () => {
   };
 
   // Delete Sesi
-  const handleDeleteSesi = async (sesiId: string) => {
-    if (!confirm('Hapus sesi ini? Seluruh data QR dan presensi pada sesi ini akan terhapus.')) return;
+  const handleDeleteSesi = async (sesi: any) => {
+    const hasAttendance = (sesi._count?.absensi || 0) > 0;
+    if (hasAttendance) {
+      alert(
+        `Sesi "${sesi.nama_sesi}" tidak dapat dihapus karena sudah memiliki ${sesi._count.absensi} riwayat presensi. Untuk menjaga integritas data, sesi yang sudah memiliki absensi tidak boleh dihapus.`
+      );
+      return;
+    }
+
+    if (!confirm(`Hapus sesi "${sesi.nama_sesi}"? Seluruh data QR pada sesi ini akan terhapus.`)) return;
     try {
-      await request(`/sesi/${sesiId}`, { method: 'DELETE' });
+      await request(`/sesi/${sesi.id}`, { method: 'DELETE' });
       fetchEvents();
     } catch (err: any) {
       alert(err.message || 'Gagal menghapus sesi.');
@@ -187,7 +280,7 @@ export const AcaraPage: React.FC = () => {
             </span>
           </div>
           <p className="text-xs text-lp3i-neutral-muted mt-1">
-            Pengaturan jadwal prosesi, batas kuota peserta, dan kontrol buka/tutup presensi gerbang
+            Pengaturan jadwal prosesi, batas kuota peserta, dan kontrol buka/tutup presensi gerbang (Zona Waktu: Asia/Jakarta / WIB)
           </p>
         </div>
 
@@ -198,7 +291,7 @@ export const AcaraPage: React.FC = () => {
               setEventFormData({
                 nama_event: '',
                 deskripsi: '',
-                tanggal: new Date().toISOString().slice(0, 10),
+                tanggal: toInputDate(new Date()),
                 lokasi: '',
                 is_active: true,
               });
@@ -275,17 +368,7 @@ export const AcaraPage: React.FC = () => {
                     </button>
 
                     <button
-                      onClick={() => {
-                        setTargetEventForSesi(evt);
-                        setSesiFormData({
-                          nama_sesi: `Sesi ${(evt.sesi?.length || 0) + 1}`,
-                          waktu_mulai: '07:30',
-                          waktu_selesai: '11:30',
-                          kuota: 500,
-                          is_open: true,
-                        });
-                        setIsSesiModalOpen(true);
-                      }}
+                      onClick={() => handleOpenCreateSesi(evt)}
                       className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -365,13 +448,23 @@ export const AcaraPage: React.FC = () => {
                               <span>{s.is_open ? 'Tutup Pintu Absensi' : 'Buka Pintu Absensi'}</span>
                             </button>
 
-                            <button
-                              onClick={() => handleDeleteSesi(s.id)}
-                              className="p-1.5 text-lp3i-neutral-muted hover:text-lp3i-red hover:bg-lp3i-red-light rounded-lg transition-colors cursor-pointer"
-                              title="Hapus sesi"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                            </button>
+                            <div className="flex items-center gap-1">
+                              <button
+                                onClick={() => handleOpenEditSesi(evt, s)}
+                                className="p-1.5 text-lp3i-neutral-muted hover:text-lp3i-blue hover:bg-lp3i-blue-light rounded-lg transition-colors cursor-pointer"
+                                title="Edit sesi wisuda"
+                              >
+                                <Edit2 className="w-3.5 h-3.5" />
+                              </button>
+
+                              <button
+                                onClick={() => handleDeleteSesi(s)}
+                                className="p-1.5 text-lp3i-neutral-muted hover:text-lp3i-red hover:bg-lp3i-red-light rounded-lg transition-colors cursor-pointer"
+                                title="Hapus sesi"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            </div>
                           </div>
                         )}
                       </div>
@@ -476,11 +569,15 @@ export const AcaraPage: React.FC = () => {
         </form>
       </Modal>
 
-      {/* Add Sesi Modal */}
+      {/* Add / Edit Sesi Modal */}
       <Modal
         isOpen={isSesiModalOpen}
         onClose={() => setIsSesiModalOpen(false)}
-        title={`Tambah Sesi untuk ${targetEventForSesi?.nama_event || ''}`}
+        title={
+          editingSesiId
+            ? `Edit Sesi: ${sesiFormData.nama_sesi || 'Sesi Wisuda'}`
+            : `Tambah Sesi untuk ${targetEventForSesi?.nama_event || ''}`
+        }
       >
         <form onSubmit={handleSesiSubmit} className="space-y-4">
           <div>
@@ -500,7 +597,7 @@ export const AcaraPage: React.FC = () => {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Waktu Mulai *
+                Waktu Mulai (WIB) *
               </label>
               <input
                 type="time"
@@ -512,7 +609,7 @@ export const AcaraPage: React.FC = () => {
             </div>
             <div>
               <label className="block text-xs font-bold text-lp3i-neutral-900 uppercase tracking-wider mb-1">
-                Waktu Selesai *
+                Waktu Selesai (WIB) *
               </label>
               <input
                 type="time"
@@ -531,11 +628,28 @@ export const AcaraPage: React.FC = () => {
             <input
               type="number"
               value={sesiFormData.kuota}
-              onChange={(e) => setSesiFormData({ ...sesiFormData, kuota: Number(e.target.value) })}
+              onChange={(e) => setSesiFormData({ ...sesiFormData, kuota: e.target.value })}
               required
               min={1}
+              placeholder="Contoh: 500"
               className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
             />
+            <p className="text-[11px] text-lp3i-neutral-muted mt-1">
+              Jumlah kapasitas kursi wisudawan yang dialokasikan untuk sesi ini (minimal 1).
+            </p>
+          </div>
+
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="sesi_is_open"
+              checked={sesiFormData.is_open}
+              onChange={(e) => setSesiFormData({ ...sesiFormData, is_open: e.target.checked })}
+              className="w-4 h-4 text-lp3i-blue rounded border-lp3i-neutral-border focus:ring-lp3i-blue cursor-pointer"
+            />
+            <label htmlFor="sesi_is_open" className="text-xs font-bold text-lp3i-neutral-900 cursor-pointer">
+              Buka Pintu Absensi Sesi Sekarang (Status Dibuka)
+            </label>
           </div>
 
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-lp3i-neutral-border">
@@ -550,7 +664,7 @@ export const AcaraPage: React.FC = () => {
               type="submit"
               className="px-5 py-2 text-xs font-bold text-white bg-lp3i-blue hover:bg-lp3i-blue-hover rounded-xl shadow-xs cursor-pointer"
             >
-              Simpan Sesi Wisuda
+              {editingSesiId ? 'Perbarui Sesi Wisuda' : 'Simpan Sesi Wisuda'}
             </button>
           </div>
         </form>

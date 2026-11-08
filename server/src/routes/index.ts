@@ -7,6 +7,7 @@ import {
   MahasiswaUpdateSchema,
   EventSchema,
   SesiSchema,
+  SesiUpdateSchema,
   QrGenerateSchema,
   QrBatchGenerateSchema,
   ScanSchema,
@@ -182,6 +183,7 @@ router.put(
   '/sesi/:id',
   authenticate,
   requireRole(['SUPERADMIN', 'ADMIN_PANITIA']),
+  validateBody(SesiUpdateSchema),
   sesiCtrl.update
 );
 router.patch(

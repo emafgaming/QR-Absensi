@@ -111,12 +111,14 @@ describe('WisudaAttend API Integration Tests', () => {
     expect(sesi).toBeTruthy();
     activeSessionId = sesi!.id;
 
-    // 5. Retrieve or Create an eligible student who has NOT attended yet
+    // 5. Retrieve or Create an eligible student who has NOT attended yet in activeSessionId
     let student = await prisma.mahasiswa.findFirst({
       where: {
         status_kelayakan: 'ELIGIBLE',
       },
-      include: { qr_codes: true },
+      include: {
+        qr_codes: true,
+      },
     });
     if (!student) {
       student = await prisma.mahasiswa.create({
@@ -131,8 +133,20 @@ describe('WisudaAttend API Integration Tests', () => {
         include: { qr_codes: true },
       });
     }
-    if (student.qr_codes.length === 0) {
-      const qr = await prisma.qrCode.create({
+
+    // Ensure clean state for this student in activeSessionId
+    await prisma.absensi.deleteMany({
+      where: {
+        mahasiswa_id: student.id,
+        sesi_id: activeSessionId,
+      },
+    });
+
+    let validQr = student.qr_codes.find(
+      (q) => q.sesi_id === activeSessionId && q.status === 'ACTIVE'
+    );
+    if (!validQr) {
+      validQr = await prisma.qrCode.create({
         data: {
           mahasiswa_id: student.id,
           sesi_id: activeSessionId,
@@ -140,11 +154,10 @@ describe('WisudaAttend API Integration Tests', () => {
           status: 'ACTIVE',
         },
       });
-      student.qr_codes = [qr];
     }
     expect(student).toBeTruthy();
     eligibleStudentNim = student!.nim;
-    validQrToken = student!.qr_codes[0]?.token;
+    validQrToken = validQr.token;
 
     // 6. Retrieve or Create ineligible student
     let ineligible = await prisma.mahasiswa.findFirst({

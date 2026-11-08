@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import prisma from '../prisma.js';
 import { createAuditLog } from '../utils/audit.js';
+import { formatTimeWib, validateTimeRange } from '../utils/time.js';
 
 export async function getAll(req: Request, res: Response) {
   try {
@@ -22,6 +23,7 @@ export async function getAll(req: Request, res: Response) {
 
     return res.json({ success: true, data: sesiList });
   } catch (error: any) {
+    console.error('[SesiController.getAll] Error fetching sessions:', error?.message);
     return res.status(500).json({ success: false, message: 'Gagal mengambil data sesi wisuda' });
   }
 }
@@ -45,6 +47,7 @@ export async function getById(req: Request, res: Response) {
 
     return res.json({ success: true, data: sesi });
   } catch (error: any) {
+    console.error(`[SesiController.getById] Error fetching session ${req.params.id}:`, error?.message);
     return res.status(500).json({ success: false, message: 'Gagal mengambil detail sesi' });
   }
 }
@@ -58,17 +61,53 @@ export async function create(req: Request, res: Response) {
       return res.status(404).json({ success: false, message: 'Acara wisuda induk tidak ditemukan' });
     }
 
-    const created = await prisma.sesiWisuda.create({
-      data: {
-        event_id,
-        nama_sesi,
-        waktu_mulai: new Date(waktu_mulai),
-        waktu_selesai: new Date(waktu_selesai),
-        kuota: parseInt(kuota) || 500,
-        is_open: is_open ?? true,
-      },
-      include: { event: true },
+    const start = new Date(waktu_mulai);
+    const end = new Date(waktu_selesai);
+
+    // 1. Validate time range (end > start)
+    const timeVal = validateTimeRange(start, end);
+    if (!timeVal.isValid) {
+      return res.status(400).json({ success: false, message: timeVal.error });
+    }
+
+    // 2. Validate quota
+    const parsedKuota = parseInt(kuota, 10);
+    if (isNaN(parsedKuota) || parsedKuota < 1) {
+      return res.status(400).json({ success: false, message: 'Target kuota peserta harus bernilai minimal 1.' });
+    }
+
+    // 3. Concurrency-safe overlap check and creation inside transaction
+    // Business rule: startA < endB AND startB < endA
+    const created = await prisma.$transaction(async (tx) => {
+      const overlapping = await tx.sesiWisuda.findFirst({
+        where: {
+          event_id,
+          AND: [
+            { waktu_mulai: { lt: end } },
+            { waktu_selesai: { gt: start } },
+          ],
+        },
+      });
+
+      if (overlapping) {
+        const errorMsg = `Jadwal sesi bertabrakan dengan ${overlapping.nama_sesi} (${formatTimeWib(overlapping.waktu_mulai)}–${formatTimeWib(overlapping.waktu_selesai)}). Silakan pilih waktu lain.`;
+        throw new Error(`OVERLAP:${errorMsg}`);
+      }
+
+      return tx.sesiWisuda.create({
+        data: {
+          event_id,
+          nama_sesi: nama_sesi.trim(),
+          waktu_mulai: start,
+          waktu_selesai: end,
+          kuota: parsedKuota,
+          is_open: is_open ?? true,
+        },
+        include: { event: true },
+      });
     });
+
+    console.info(`[SesiController.create] Sesi '${created.nama_sesi}' created successfully (ID: ${created.id}) for Event: '${event.nama_event}'`);
 
     await createAuditLog({
       userId: req.user?.id,
@@ -82,7 +121,12 @@ export async function create(req: Request, res: Response) {
 
     return res.status(201).json({ success: true, message: 'Sesi wisuda berhasil dibuat', data: created });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: 'Gagal membuat sesi wisuda' });
+    if (error?.message?.startsWith('OVERLAP:')) {
+      const msg = error.message.replace('OVERLAP:', '');
+      return res.status(400).json({ success: false, message: msg });
+    }
+    console.error('[SesiController.create] Error creating session:', error?.message);
+    return res.status(500).json({ success: false, message: error?.message || 'Gagal membuat sesi wisuda' });
   }
 }
 
@@ -96,16 +140,56 @@ export async function update(req: Request, res: Response) {
       return res.status(404).json({ success: false, message: 'Sesi wisuda tidak ditemukan' });
     }
 
-    const updated = await prisma.sesiWisuda.update({
-      where: { id },
-      data: {
-        ...(nama_sesi ? { nama_sesi } : {}),
-        ...(waktu_mulai ? { waktu_mulai: new Date(waktu_mulai) } : {}),
-        ...(waktu_selesai ? { waktu_selesai: new Date(waktu_selesai) } : {}),
-        ...(kuota !== undefined ? { kuota: parseInt(kuota) } : {}),
-        ...(is_open !== undefined ? { is_open } : {}),
-      },
+    const targetStart = waktu_mulai ? new Date(waktu_mulai) : existing.waktu_mulai;
+    const targetEnd = waktu_selesai ? new Date(waktu_selesai) : existing.waktu_selesai;
+
+    // 1. Validate time range (end > start)
+    const timeVal = validateTimeRange(targetStart, targetEnd);
+    if (!timeVal.isValid) {
+      return res.status(400).json({ success: false, message: timeVal.error });
+    }
+
+    // 2. Validate quota if provided
+    let parsedKuota: number | undefined = undefined;
+    if (kuota !== undefined) {
+      parsedKuota = parseInt(kuota, 10);
+      if (isNaN(parsedKuota) || parsedKuota < 1) {
+        return res.status(400).json({ success: false, message: 'Target kuota peserta harus bernilai minimal 1.' });
+      }
+    }
+
+    // 3. Concurrency-safe overlap check excluding self
+    const updated = await prisma.$transaction(async (tx) => {
+      const overlapping = await tx.sesiWisuda.findFirst({
+        where: {
+          event_id: existing.event_id,
+          id: { not: id }, // Exclude self!
+          AND: [
+            { waktu_mulai: { lt: targetEnd } },
+            { waktu_selesai: { gt: targetStart } },
+          ],
+        },
+      });
+
+      if (overlapping) {
+        const errorMsg = `Jadwal sesi bertabrakan dengan ${overlapping.nama_sesi} (${formatTimeWib(overlapping.waktu_mulai)}–${formatTimeWib(overlapping.waktu_selesai)}). Silakan pilih waktu lain.`;
+        throw new Error(`OVERLAP:${errorMsg}`);
+      }
+
+      return tx.sesiWisuda.update({
+        where: { id },
+        data: {
+          ...(nama_sesi ? { nama_sesi: nama_sesi.trim() } : {}),
+          ...(waktu_mulai ? { waktu_mulai: targetStart } : {}),
+          ...(waktu_selesai ? { waktu_selesai: targetEnd } : {}),
+          ...(parsedKuota !== undefined ? { kuota: parsedKuota } : {}),
+          ...(is_open !== undefined ? { is_open: Boolean(is_open) } : {}),
+        },
+        include: { event: true },
+      });
     });
+
+    console.info(`[SesiController.update] Sesi '${updated.nama_sesi}' updated successfully (ID: ${id})`);
 
     await createAuditLog({
       userId: req.user?.id,
@@ -120,7 +204,12 @@ export async function update(req: Request, res: Response) {
 
     return res.json({ success: true, message: 'Sesi wisuda berhasil diperbarui', data: updated });
   } catch (error: any) {
-    return res.status(500).json({ success: false, message: 'Gagal memperbarui sesi wisuda' });
+    if (error?.message?.startsWith('OVERLAP:')) {
+      const msg = error.message.replace('OVERLAP:', '');
+      return res.status(400).json({ success: false, message: msg });
+    }
+    console.error(`[SesiController.update] Error updating session ${req.params.id}:`, error?.message);
+    return res.status(500).json({ success: false, message: error?.message || 'Gagal memperbarui sesi wisuda' });
   }
 }
 
@@ -156,6 +245,7 @@ export async function toggleOpen(req: Request, res: Response) {
       data: updated,
     });
   } catch (error: any) {
+    console.error(`[SesiController.toggleOpen] Error toggling session ${req.params.id}:`, error?.message);
     return res.status(500).json({ success: false, message: 'Gagal mengubah status sesi' });
   }
 }
@@ -163,12 +253,30 @@ export async function toggleOpen(req: Request, res: Response) {
 export async function remove(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const existing = await prisma.sesiWisuda.findUnique({ where: { id } });
+    const existing = await prisma.sesiWisuda.findUnique({
+      where: { id },
+      include: {
+        _count: {
+          select: { absensi: true, qr_codes: true },
+        },
+      },
+    });
+
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Sesi wisuda tidak ditemukan' });
     }
 
+    // Business rule: Prevent deleting session if attendance records exist
+    if (existing._count.absensi > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `Sesi wisuda "${existing.nama_sesi}" tidak dapat dihapus karena sudah memiliki ${existing._count.absensi} riwayat presensi. Batalkan atau koreksi absensi terlebih dahulu bila diperlukan untuk menjaga integritas data.`,
+      });
+    }
+
     await prisma.sesiWisuda.delete({ where: { id } });
+
+    console.info(`[SesiController.remove] Sesi '${existing.nama_sesi}' deleted (ID: ${id})`);
 
     await createAuditLog({
       userId: req.user?.id,
@@ -182,6 +290,7 @@ export async function remove(req: Request, res: Response) {
 
     return res.json({ success: true, message: 'Sesi wisuda berhasil dihapus' });
   } catch (error: any) {
+    console.error(`[SesiController.remove] Error removing session ${req.params.id}:`, error?.message);
     return res.status(500).json({ success: false, message: 'Gagal menghapus sesi wisuda' });
   }
 }

@@ -101,12 +101,18 @@ async function main() {
   }
   console.log(`-> Sesi Aktif: "${sesi.nama_sesi}" (${event.nama_event})`);
 
-  // 3. Clean up all existing attendance, QR codes, and student records for a clean slate
-  console.log('-> Menghapus semua data presensi dan QR code mahasiswa...');
-  await prisma.absensi.deleteMany({});
-  await prisma.qrCode.deleteMany({});
-  const deletedMhs = await prisma.mahasiswa.deleteMany({});
-  console.log(`-> Berhasil membersihkan ${deletedMhs.count} data mahasiswa lama.`);
+  // 3. Safety Check: Only clean data if database is empty or explicitly allowed via ALLOW_DESTRUCTIVE_SEED=true
+  const existingMhsCount = await prisma.mahasiswa.count();
+  if (existingMhsCount > 0 && process.env.ALLOW_DESTRUCTIVE_SEED !== 'true') {
+    console.log(`-> Database telah berisi ${existingMhsCount} data mahasiswa. Melewati pembersihan destruktif untuk menjaga integritas data.`);
+    console.log('-> Gunakan ALLOW_DESTRUCTIVE_SEED=true bila secara sengaja ingin mengulang inisialisasi dari awal.');
+  } else {
+    console.log('-> Membersihkan data lama untuk inisialisasi bersih...');
+    await prisma.absensi.deleteMany({});
+    await prisma.qrCode.deleteMany({});
+    const deletedMhs = await prisma.mahasiswa.deleteMany({});
+    console.log(`-> Berhasil membersihkan ${deletedMhs.count} data mahasiswa.`);
+  }
 
   // 4. Import Real Students from real_students.json (from 'Rekap IPK Mahasiswa Angkatan 2024.xls')
   const jsonPath = path.resolve(__dirname, 'real_students.json');

@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { request } from '../api/client.js';
+import { request, apiCache } from '../api/client.js';
 
 export type Role = 'SUPERADMIN' | 'ADMIN_PANITIA' | 'PETUGAS' | 'VIEWER';
 
@@ -72,6 +72,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
         await request('/auth/logout', { method: 'POST' }).catch(() => {});
       }
     } finally {
+      apiCache.clear();
       localStorage.removeItem('watt_token');
       localStorage.removeItem('watt_user');
       setToken(null);

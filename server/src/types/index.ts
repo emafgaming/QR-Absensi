@@ -78,8 +78,26 @@ export const SesiSchema = z.object({
   nama_sesi: z.string().min(2, 'Nama sesi minimal 2 karakter'),
   waktu_mulai: z.string().or(z.date()),
   waktu_selesai: z.string().or(z.date()),
-  kuota: z.number().int().positive().default(500),
+  kuota: z.number().int().positive('Target kuota peserta minimal 1').default(500),
   is_open: z.boolean().default(true),
+}).refine(
+  (data) => {
+    const start = new Date(data.waktu_mulai).getTime();
+    const end = new Date(data.waktu_selesai).getTime();
+    return !isNaN(start) && !isNaN(end) && end > start;
+  },
+  {
+    message: 'Waktu selesai harus lebih besar dari waktu mulai.',
+    path: ['waktu_selesai'],
+  }
+);
+
+export const SesiUpdateSchema = z.object({
+  nama_sesi: z.string().min(2, 'Nama sesi minimal 2 karakter').optional(),
+  waktu_mulai: z.string().or(z.date()).optional(),
+  waktu_selesai: z.string().or(z.date()).optional(),
+  kuota: z.number().int().positive('Target kuota peserta minimal 1').optional(),
+  is_open: z.boolean().optional(),
 });
 
 export const QrGenerateSchema = z.object({
