@@ -121,9 +121,23 @@ export async function update(req: Request, res: Response) {
 export async function remove(req: Request, res: Response) {
   try {
     const { id } = req.params;
-    const existing = await prisma.event.findUnique({ where: { id } });
+    const existing = await prisma.event.findUnique({
+      where: { id },
+      include: {
+        sesi: {
+          select: { id: true },
+        },
+      },
+    });
     if (!existing) {
       return res.status(404).json({ success: false, message: 'Acara tidak ditemukan' });
+    }
+
+    const sesiIds = existing.sesi.map((s) => s.id);
+    if (sesiIds.length > 0) {
+      await prisma.absensi.deleteMany({ where: { sesi_id: { in: sesiIds } } });
+      await prisma.qrCode.deleteMany({ where: { sesi_id: { in: sesiIds } } });
+      await prisma.sesiWisuda.deleteMany({ where: { event_id: id } });
     }
 
     await prisma.event.delete({ where: { id } });
@@ -140,6 +154,7 @@ export async function remove(req: Request, res: Response) {
 
     return res.json({ success: true, message: 'Acara wisuda berhasil dihapus' });
   } catch (error: any) {
+    console.error('Error deleting event:', error);
     return res.status(500).json({ success: false, message: 'Gagal menghapus acara' });
   }
 }

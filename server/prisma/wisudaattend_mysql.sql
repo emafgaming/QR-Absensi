@@ -216,12 +216,12 @@ INSERT INTO `users` (`id`, `username`, `nama`, `email`, `password_hash`, `role`,
 
 -- Acara Wisuda (Events)
 INSERT INTO `events` (`id`, `nama_event`, `deskripsi`, `tanggal`, `lokasi`, `is_active`) VALUES
-('evt_wisuda_2026_01', 'Wisuda Sarjana & Magister Periode I Tahun 2026', 'Upacara wisuda kelulusan sarjana dan magister universitas tahun akademik 2025/2026.', '2026-11-15 08:00:00.000', 'Auditorium Utama & Grand Ballroom Kampus Terpadu', 1);
+('evt_wisuda_2026_01', 'Wisuda Angkatan 2024 - Politeknik LP3I Kampus Pekanbaru', 'Upacara wisuda dan pelantikan lulusan Politeknik LP3I Pekanbaru Angkatan 2024.', '2026-11-15 08:00:00.000', 'Auditorium Utama Politeknik LP3I Pekanbaru', 1);
 
 -- Sesi Wisuda (SesiWisuda)
 INSERT INTO `sesi_wisuda` (`id`, `event_id`, `nama_sesi`, `waktu_mulai`, `waktu_selesai`, `kuota`, `is_open`) VALUES
-('sesi_wisuda_pagi_01', 'evt_wisuda_2026_01', 'Sesi 1 (Pagi - Saintek, Kedokteran & Ilmu Komputer)', '2026-11-15 07:00:00.000', '2026-11-15 11:30:00.000', 600, 1),
-('sesi_wisuda_siang_02', 'evt_wisuda_2026_01', 'Sesi 2 (Siang - Ekonomi, Bisnis & Hukum)', '2026-11-15 13:00:00.000', '2026-11-15 17:00:00.000', 500, 1);
+('sesi_wisuda_pagi_01', 'evt_wisuda_2026_01', 'Sesi 1 (Pagi - Seluruh Program Studi Angkatan 2024)', '2026-11-15 07:00:00.000', '2026-11-15 12:00:00.000', 500, 1),
+('sesi_wisuda_siang_02', 'evt_wisuda_2026_01', 'Sesi 2 (Siang - Cadangan / Sesi Khusus)', '2026-11-15 13:00:00.000', '2026-11-15 17:00:00.000', 500, 1);
 
 -- Data Mahasiswa Angkatan 2024 (Mahasiswa)
 INSERT INTO `mahasiswa` (`id`, `nim`, `nama`, `prodi`, `fakultas`, `angkatan`, `status_kelayakan`, `email`, `no_hp`) VALUES

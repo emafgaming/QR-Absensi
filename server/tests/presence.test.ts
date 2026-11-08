@@ -18,7 +18,30 @@ describe('Wisuda Presence & Data Mahasiswa Comprehensive Tests', () => {
     superadminToken = saLogin.body.data.token;
 
     // 2. Active Session
-    const sesi = await prisma.sesiWisuda.findFirst({ where: { is_open: true } });
+    let sesi = await prisma.sesiWisuda.findFirst({ where: { is_open: true } });
+    if (!sesi) {
+      let event = await prisma.event.findFirst();
+      if (!event) {
+        event = await prisma.event.create({
+          data: {
+            nama_event: 'Wisuda Angkatan 2024',
+            tanggal: new Date(),
+            lokasi: 'Auditorium Utama LP3I',
+            is_active: true,
+          },
+        });
+      }
+      sesi = await prisma.sesiWisuda.create({
+        data: {
+          event_id: event.id,
+          nama_sesi: 'Sesi 1 (Pagi)',
+          waktu_mulai: new Date(),
+          waktu_selesai: new Date(Date.now() + 8 * 3600 * 1000),
+          kuota: 500,
+          is_open: true,
+        },
+      });
+    }
     expect(sesi).toBeTruthy();
     activeSessionId = sesi!.id;
   });

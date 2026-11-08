@@ -129,6 +129,39 @@ export const AcaraPage: React.FC = () => {
     }
   };
 
+  // Open Edit Event Modal
+  const handleOpenEditEvent = (evt: any) => {
+    setSelectedEventId(evt.id);
+    setEventFormData({
+      nama_event: evt.nama_event || '',
+      deskripsi: evt.deskripsi || '',
+      tanggal: evt.tanggal ? new Date(evt.tanggal).toISOString().slice(0, 10) : new Date().toISOString().slice(0, 10),
+      lokasi: evt.lokasi || '',
+      is_active: evt.is_active ?? true,
+    });
+    setIsEventModalOpen(true);
+  };
+
+  // Delete Event
+  const handleDeleteEvent = async (event: any) => {
+    const sesiCount = event.sesi?.length || 0;
+    const confirmMessage =
+      sesiCount > 0
+        ? `Apakah Anda yakin ingin menghapus acara "${event.nama_event}"?\n\nPERINGATAN: Acara ini memiliki ${sesiCount} sesi wisuda. Seluruh data sesi, QR Code, dan absensi di dalam acara ini akan ikut terhapus secara permanen.`
+        : `Apakah Anda yakin ingin menghapus acara "${event.nama_event}"?`;
+
+    if (!window.confirm(confirmMessage)) return;
+
+    try {
+      const res = await request(`/events/${event.id}`, { method: 'DELETE' });
+      if (res.success) {
+        fetchEvents();
+      }
+    } catch (err: any) {
+      alert(err.message || 'Gagal menghapus acara.');
+    }
+  };
+
   // Delete Sesi
   const handleDeleteSesi = async (sesiId: string) => {
     if (!confirm('Hapus sesi ini? Seluruh data QR dan presensi pada sesi ini akan terhapus.')) return;
@@ -222,23 +255,43 @@ export const AcaraPage: React.FC = () => {
                 </div>
 
                 {canManage && (
-                  <button
-                    onClick={() => {
-                      setTargetEventForSesi(evt);
-                      setSesiFormData({
-                        nama_sesi: `Sesi ${(evt.sesi?.length || 0) + 1}`,
-                        waktu_mulai: '07:30',
-                        waktu_selesai: '11:30',
-                        kuota: 500,
-                        is_open: true,
-                      });
-                      setIsSesiModalOpen(true);
-                    }}
-                    className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
-                  >
-                    <Plus className="w-3.5 h-3.5" />
-                    <span>Tambah Sesi</span>
-                  </button>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <button
+                      onClick={() => handleOpenEditEvent(evt)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-lp3i-neutral-100 hover:bg-lp3i-neutral-200 text-lp3i-neutral-800 text-xs font-bold rounded-xl border border-lp3i-neutral-border transition-colors cursor-pointer"
+                      title="Edit acara wisuda"
+                    >
+                      <Edit2 className="w-3.5 h-3.5 text-lp3i-neutral-600" />
+                      <span>Edit Acara</span>
+                    </button>
+
+                    <button
+                      onClick={() => handleDeleteEvent(evt)}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-lp3i-red-light hover:bg-lp3i-red hover:text-white text-lp3i-red text-xs font-bold rounded-xl border border-lp3i-red-light transition-colors cursor-pointer"
+                      title="Hapus acara wisuda beserta seluruh sesinya"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                      <span>Hapus Acara</span>
+                    </button>
+
+                    <button
+                      onClick={() => {
+                        setTargetEventForSesi(evt);
+                        setSesiFormData({
+                          nama_sesi: `Sesi ${(evt.sesi?.length || 0) + 1}`,
+                          waktu_mulai: '07:30',
+                          waktu_selesai: '11:30',
+                          kuota: 500,
+                          is_open: true,
+                        });
+                        setIsSesiModalOpen(true);
+                      }}
+                      className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-lp3i-blue hover:bg-lp3i-blue-hover text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+                    >
+                      <Plus className="w-3.5 h-3.5" />
+                      <span>Tambah Sesi</span>
+                    </button>
+                  </div>
                 )}
               </div>
 
@@ -392,6 +445,19 @@ export const AcaraPage: React.FC = () => {
             />
           </div>
 
+          <div className="flex items-center gap-2 pt-1">
+            <input
+              type="checkbox"
+              id="is_active"
+              checked={eventFormData.is_active}
+              onChange={(e) => setEventFormData({ ...eventFormData, is_active: e.target.checked })}
+              className="w-4 h-4 text-lp3i-blue rounded border-lp3i-neutral-border focus:ring-lp3i-blue cursor-pointer"
+            />
+            <label htmlFor="is_active" className="text-xs font-bold text-lp3i-neutral-900 cursor-pointer">
+              Set sebagai Acara Wisuda Aktif
+            </label>
+          </div>
+
           <div className="flex items-center justify-end gap-2 pt-3 border-t border-lp3i-neutral-border">
             <button
               type="button"
@@ -426,7 +492,7 @@ export const AcaraPage: React.FC = () => {
               value={sesiFormData.nama_sesi}
               onChange={(e) => setSesiFormData({ ...sesiFormData, nama_sesi: e.target.value })}
               required
-              placeholder="Contoh: Sesi 1 (Pagi - Fakultas Teknik & Ilmu Komputer)"
+              placeholder="Contoh: Sesi 1 (Pagi - Seluruh Program Studi Angkatan 2024)"
               className="w-full px-3.5 py-2 text-xs bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
             />
           </div>

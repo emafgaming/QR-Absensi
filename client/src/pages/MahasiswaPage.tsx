@@ -34,6 +34,15 @@ export const PROGRAM_STUDI_OPTIONS = [
 
 export type ProgramStudi = (typeof PROGRAM_STUDI_OPTIONS)[number];
 
+export const getNimProdiMapping = (nim: string): ProgramStudi | null => {
+  const cleanNim = nim.trim();
+  if (cleanNim.startsWith('202421')) return 'Administrasi Bisnis';
+  if (cleanNim.startsWith('202422')) return 'Manajemen Informatika';
+  if (cleanNim.startsWith('202423')) return 'Komputerisasi Akuntansi';
+  if (cleanNim.startsWith('202424')) return 'Hubungan Masyarakat';
+  return null;
+};
+
 export const MahasiswaPage: React.FC = () => {
   const { hasRole } = useAuth();
   const canEdit = hasRole(['SUPERADMIN', 'ADMIN_PANITIA']);
@@ -273,16 +282,16 @@ export const MahasiswaPage: React.FC = () => {
   const handleDownloadTemplate = () => {
     const csvContent =
       'nim,nama,prodi,angkatan\n' +
-      '202201010,Budi Santoso,Manajemen Informatika,2022\n' +
-      '202201011,Citra Dewi,Hubungan Masyarakat,2022\n' +
-      '202201012,Fajar Pratama,Komputerisasi Akuntansi,2022\n' +
-      '202201013,Anisa Rahma,Administrasi Bisnis,2022\n';
+      '202421001,AGUSTIANA,Administrasi Bisnis,2024\n' +
+      '202422001,ABDULLAH,Manajemen Informatika,2024\n' +
+      '202423001,ALEX CANDRA SINAMBELA,Komputerisasi Akuntansi,2024\n' +
+      '202424002,ANDINI,Hubungan Masyarakat,2024\n';
 
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
     link.setAttribute('href', url);
-    link.setAttribute('download', 'template_import_mahasiswa_wisuda.csv');
+    link.setAttribute('download', 'template_import_mahasiswa_wisuda_2024.csv');
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -303,7 +312,21 @@ export const MahasiswaPage: React.FC = () => {
         if (results.errors.length > 0) {
           setImportError('Terjadi kesalahan parsing format file CSV.');
         } else {
-          setParsedRows(results.data);
+          // Normalize rows with auto prodi fallback from NIM if empty or matching prefix
+          const normalized = (results.data as any[]).map((row) => {
+            const nim = String(row.nim || row.NIM || '').trim();
+            let prodi = String(row.prodi || row.Prodi || row.PRODI || row['Program Studi'] || '').trim();
+            if (!prodi && nim) {
+              const detected = getNimProdiMapping(nim);
+              if (detected) prodi = detected;
+            }
+            return {
+              ...row,
+              nim,
+              prodi,
+            };
+          });
+          setParsedRows(normalized);
         }
       },
       error: (err) => {
@@ -593,12 +616,23 @@ export const MahasiswaPage: React.FC = () => {
               <input
                 type="text"
                 value={formData.nim}
-                onChange={(e) => setFormData({ ...formData, nim: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const detected = getNimProdiMapping(val);
+                  setFormData({
+                    ...formData,
+                    nim: val,
+                    prodi: detected || formData.prodi,
+                    angkatan: val.trim().startsWith('2024') ? '2024' : formData.angkatan,
+                  });
+                }}
                 required
-                placeholder="Contoh: 202522001"
+                placeholder="Contoh: 202421001"
                 className="w-full px-3.5 py-2 text-xs font-mono font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden"
               />
-              <p className="text-[11px] text-lp3i-neutral-muted mt-1">Nomor Induk Mahasiswa resmi yang terdaftar</p>
+              <p className="text-[11px] text-lp3i-neutral-muted mt-1">
+                Prefix otomatis: 202421 (AB), 202422 (MI), 202423 (KA), 202424 (HM)
+              </p>
             </div>
 
             {/* Nama Mahasiswa Field */}
@@ -709,7 +743,15 @@ export const MahasiswaPage: React.FC = () => {
               <input
                 type="text"
                 value={formData.nim}
-                onChange={(e) => setFormData({ ...formData, nim: e.target.value })}
+                onChange={(e) => {
+                  const val = e.target.value;
+                  const detected = getNimProdiMapping(val);
+                  setFormData({
+                    ...formData,
+                    nim: val,
+                    prodi: detected || formData.prodi,
+                  });
+                }}
                 required
                 className="w-full px-3.5 py-2 text-xs font-mono font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-[#11446E] focus:ring-2 focus:ring-[#EAF1F6] focus:outline-hidden"
               />

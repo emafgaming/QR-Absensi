@@ -656,7 +656,7 @@ export const ScanPage: React.FC = () => {
               type="text"
               value={manualNim}
               onChange={(e) => setManualNim(e.target.value)}
-              placeholder="Contoh: 202201001"
+              placeholder="Contoh: 202421001"
               className="w-full px-3.5 py-2.5 text-xs font-mono font-bold bg-lp3i-neutral-50 border border-lp3i-neutral-border rounded-xl focus:border-lp3i-blue focus:ring-2 focus:ring-lp3i-blue-light focus:outline-hidden"
               required
               autoFocus

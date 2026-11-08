@@ -330,12 +330,27 @@ export async function importCsv(req: Request, res: Response) {
 
     rows.forEach((rawRow: any, index: number) => {
       const rowNum = index + 1;
+      const rawNim = String(rawRow.nim || rawRow.NIM || '').trim();
+      let rawProdi = String(rawRow.prodi || rawRow.Prodi || rawRow.PRODI || rawRow['Program Studi'] || '').trim();
+      let rawAngkatan = String(rawRow.angkatan || rawRow.Angkatan || rawRow.ANGKATAN || '').trim();
+
+      // Auto-infer prodi and angkatan from standard 2024 NIM prefix if omitted
+      if (!rawProdi && rawNim) {
+        if (rawNim.startsWith('202421')) rawProdi = 'Administrasi Bisnis';
+        else if (rawNim.startsWith('202422')) rawProdi = 'Manajemen Informatika';
+        else if (rawNim.startsWith('202423')) rawProdi = 'Komputerisasi Akuntansi';
+        else if (rawNim.startsWith('202424')) rawProdi = 'Hubungan Masyarakat';
+      }
+      if (!rawAngkatan) {
+        rawAngkatan = rawNim.startsWith('2024') ? '2024' : new Date().getFullYear().toString();
+      }
+
       const normalizedRow = {
-        nim: String(rawRow.nim || rawRow.NIM || '').trim(),
+        nim: rawNim,
         nama: String(rawRow.nama || rawRow.Nama || rawRow.NAMA || '').trim(),
-        prodi: String(rawRow.prodi || rawRow.Prodi || rawRow.PRODI || rawRow['Program Studi'] || '').trim(),
+        prodi: rawProdi,
         fakultas: String(rawRow.fakultas || rawRow.Fakultas || rawRow.FAKULTAS || '-').trim() || '-',
-        angkatan: String(rawRow.angkatan || rawRow.Angkatan || rawRow.ANGKATAN || new Date().getFullYear().toString()).trim(),
+        angkatan: rawAngkatan,
         status_kelayakan: 'ELIGIBLE',
         email: rawRow.email ? String(rawRow.email).trim() : null,
         no_hp: rawRow.no_hp || rawRow.telepon ? String(rawRow.no_hp || rawRow.telepon).trim() : null,

@@ -110,16 +110,26 @@ async function main() {
 
   // 4. Import Real Students from real_students.json (from 'Rekap IPK Mahasiswa Angkatan 2024.xls')
   const jsonPath = path.resolve(__dirname, 'real_students.json');
+  const ALLOWED_PRODIS = [
+    'Manajemen Informatika',
+    'Hubungan Masyarakat',
+    'Komputerisasi Akuntansi',
+    'Administrasi Bisnis',
+  ];
+
   if (fs.existsSync(jsonPath)) {
     const rawData = fs.readFileSync(jsonPath, 'utf8');
     const students: any[] = JSON.parse(rawData);
 
-    console.log(`Memproses impor ${students.length} data mahasiswa resmi dari 'Rekap IPK Mahasiswa Angkatan 2024.xls'...`);
+    // Strictly filter only students in the 4 official prodis
+    const validStudents = students.filter((s) => ALLOWED_PRODIS.includes(s.prodi));
+
+    console.log(`Memproses impor ${validStudents.length} data mahasiswa resmi dari 'Rekap IPK Mahasiswa Angkatan 2024.xls'...`);
 
     let importedCount = 0;
     let qrCreatedCount = 0;
 
-    for (const s of students) {
+    for (const s of validStudents) {
       const mhs = await prisma.mahasiswa.create({
         data: {
           nim: s.nim,
@@ -149,6 +159,15 @@ async function main() {
   } else {
     console.warn('-> Berkas real_students.json tidak ditemukan.');
   }
+
+  // Ensure any other prodi is wiped out if exists
+  await prisma.mahasiswa.deleteMany({
+    where: {
+      prodi: {
+        notIn: ALLOWED_PRODIS,
+      },
+    },
+  });
 
   const totalMhs = await prisma.mahasiswa.count();
   console.log(`-> Total mahasiswa di database sekarang: ${totalMhs}`);

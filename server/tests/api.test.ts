@@ -1,5 +1,6 @@
 import { describe, it, expect, beforeAll, afterAll } from 'vitest';
 import request from 'supertest';
+import bcrypt from 'bcryptjs';
 import app from '../src/app.js';
 import prisma from '../src/prisma.js';
 
@@ -16,6 +17,42 @@ describe('WisudaAttend API Integration Tests', () => {
     // Clean attendance for testing reproducibility
     await prisma.absensi.deleteMany({});
     await prisma.auditLog.deleteMany({});
+
+    // Ensure test users exist
+    const pwdHash = await bcrypt.hash('Wisuda2026!', 10);
+    await prisma.user.upsert({
+      where: { username: 'superadmin' },
+      update: { password_hash: pwdHash, is_active: true },
+      create: {
+        username: 'superadmin',
+        nama: 'Superadmin Test',
+        email: 'superadmin@wisuda.ac.id',
+        password_hash: pwdHash,
+        role: 'SUPERADMIN',
+      },
+    });
+    await prisma.user.upsert({
+      where: { username: 'petugas1' },
+      update: { password_hash: pwdHash, is_active: true },
+      create: {
+        username: 'petugas1',
+        nama: 'Petugas Test',
+        email: 'petugas1@wisuda.ac.id',
+        password_hash: pwdHash,
+        role: 'PETUGAS',
+      },
+    });
+    await prisma.user.upsert({
+      where: { username: 'viewer' },
+      update: { password_hash: pwdHash, is_active: true },
+      create: {
+        username: 'viewer',
+        nama: 'Viewer Test',
+        email: 'viewer@wisuda.ac.id',
+        password_hash: pwdHash,
+        role: 'VIEWER',
+      },
+    });
 
     // 1. Login as Superadmin
     const saLogin = await request(app)
@@ -399,6 +436,62 @@ describe('WisudaAttend API Integration Tests', () => {
       expect(res.text).toContain('NIM');
       expect(res.text).toContain('Nama Mahasiswa');
       expect(res.text).toContain('Program Studi');
+    });
+  });
+
+  describe('Event & Sesi Management CRUD', () => {
+    let createdEventId = '';
+    let createdSesiId = '';
+
+    it('creates a new event and session as superadmin', async () => {
+      const resEvent = await request(app)
+        .post('/api/v1/events')
+        .set('Authorization', `Bearer ${superadminToken}`)
+        .send({
+          nama_event: 'Acara Uji Coba Hapus Event',
+          deskripsi: 'Deskripsi uji coba',
+          tanggal: new Date().toISOString(),
+          lokasi: 'Gedung Serbaguna',
+          is_active: false,
+        });
+
+      expect(resEvent.status).toBe(201);
+      expect(resEvent.body.success).toBe(true);
+      createdEventId = resEvent.body.data.id;
+
+      // Add a session to this event
+      const resSesi = await request(app)
+        .post('/api/v1/sesi')
+        .set('Authorization', `Bearer ${superadminToken}`)
+        .send({
+          event_id: createdEventId,
+          nama_sesi: 'Sesi Uji Coba 1',
+          waktu_mulai: new Date().toISOString(),
+          waktu_selesai: new Date(Date.now() + 3600000).toISOString(),
+          kuota: 100,
+          is_open: true,
+        });
+
+      expect(resSesi.status).toBe(201);
+      createdSesiId = resSesi.body.data.id;
+    });
+
+    it('deletes the event and cascades session deletion successfully', async () => {
+      const resDelete = await request(app)
+        .delete(`/api/v1/events/${createdEventId}`)
+        .set('Authorization', `Bearer ${superadminToken}`);
+
+      expect(resDelete.status).toBe(200);
+      expect(resDelete.body.success).toBe(true);
+      expect(resDelete.body.message).toContain('berhasil dihapus');
+
+      // Verify event is gone
+      const checkEvent = await prisma.event.findUnique({ where: { id: createdEventId } });
+      expect(checkEvent).toBeNull();
+
+      // Verify cascaded session is also gone
+      const checkSesi = await prisma.sesiWisuda.findUnique({ where: { id: createdSesiId } });
+      expect(checkSesi).toBeNull();
     });
   });
 
