@@ -102,49 +102,64 @@ export async function batchGenerate(req: Request, res: Response) {
     if (filter_prodi) where.prodi = filter_prodi;
     if (filter_fakultas) where.fakultas = filter_fakultas;
 
-    const students = await prisma.mahasiswa.findMany({ where });
+    const students = await prisma.mahasiswa.findMany({
+      where,
+      select: { id: true },
+    });
 
-    let generatedCount = 0;
+    if (students.length === 0) {
+      return res.json({
+        success: true,
+        message: 'Tidak ada mahasiswa yang memenuhi kriteria untuk sesi ini.',
+        data: { totalTarget: 0, generated: 0, skipped: 0 },
+      });
+    }
+
+    const studentIds = students.map((s) => s.id);
+    let targetStudentIds: string[] = [];
     let skippedCount = 0;
 
-    for (const student of students) {
-      const activeQr = await prisma.qrCode.findFirst({
-        where: { mahasiswa_id: student.id, sesi_id, status: 'ACTIVE' },
+    if (regenerate_existing) {
+      // 1. Revoke existing active QR codes for these students in ONE query
+      await prisma.qrCode.updateMany({
+        where: {
+          sesi_id,
+          mahasiswa_id: { in: studentIds },
+          status: 'ACTIVE',
+        },
+        data: { status: 'REVOKED', revoked_at: new Date() },
       });
-
-      if (activeQr) {
-        if (regenerate_existing) {
-          // Revoke old and create new
-          await prisma.qrCode.update({
-            where: { id: activeQr.id },
-            data: { status: 'REVOKED', revoked_at: new Date() },
-          });
-          const token = generateSecureToken();
-          await prisma.qrCode.create({
-            data: {
-              mahasiswa_id: student.id,
-              sesi_id,
-              token,
-              status: 'ACTIVE',
-            },
-          });
-          generatedCount++;
-        } else {
-          skippedCount++;
-        }
-      } else {
-        const token = generateSecureToken();
-        await prisma.qrCode.create({
-          data: {
-            mahasiswa_id: student.id,
-            sesi_id,
-            token,
-            status: 'ACTIVE',
-          },
-        });
-        generatedCount++;
-      }
+      targetStudentIds = studentIds;
+    } else {
+      // 1. Find existing active QRs in ONE query
+      const existingActiveQrs = await prisma.qrCode.findMany({
+        where: {
+          sesi_id,
+          mahasiswa_id: { in: studentIds },
+          status: 'ACTIVE',
+        },
+        select: { mahasiswa_id: true },
+      });
+      const existingStudentIdSet = new Set(existingActiveQrs.map((q) => q.mahasiswa_id));
+      targetStudentIds = studentIds.filter((id) => !existingStudentIdSet.has(id));
+      skippedCount = existingStudentIdSet.size;
     }
+
+    // 2. Batch insert new active QR codes in ONE query
+    if (targetStudentIds.length > 0) {
+      const newQrData = targetStudentIds.map((mhsId) => ({
+        mahasiswa_id: mhsId,
+        sesi_id,
+        token: generateSecureToken(),
+        status: 'ACTIVE',
+      }));
+
+      await prisma.qrCode.createMany({
+        data: newQrData,
+      });
+    }
+
+    const generatedCount = targetStudentIds.length;
 
     await createAuditLog({
       userId: req.user?.id,
@@ -156,7 +171,7 @@ export async function batchGenerate(req: Request, res: Response) {
 
     return res.json({
       success: true,
-      message: `Batch QR berhasil diproses. ${generatedCount} QR baru dibuat, ${skippedCount} mahasiswa sudah memiliki QR.`,
+      message: `Batch QR berhasil diproses. ${generatedCount} QR baru dibuat, ${skippedCount} mahasiswa sudah memiliki QR aktif.`,
       data: {
         totalTarget: students.length,
         generated: generatedCount,

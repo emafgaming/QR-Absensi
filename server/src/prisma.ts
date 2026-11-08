@@ -17,15 +17,15 @@ if (!databaseUrl && process.env.MYSQL_USER && process.env.MYSQL_DATABASE) {
 }
 
 // Optimization for PostgreSQL / Supabase / Neon connection pooler:
-// Restrict connection_limit to 1 per serverless instance to prevent "max clients reached in session mode" (pool_size: 15)
+// Allow up to 3 connections per serverless instance to keep parallel UI requests fast while staying well under pool_size 15
 if (databaseUrl && (databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://'))) {
   try {
     const urlObj = new URL(databaseUrl);
     if (!urlObj.searchParams.has('connection_limit')) {
-      urlObj.searchParams.set('connection_limit', '1');
+      urlObj.searchParams.set('connection_limit', '3');
     }
     if (!urlObj.searchParams.has('pool_timeout')) {
-      urlObj.searchParams.set('pool_timeout', '20');
+      urlObj.searchParams.set('pool_timeout', '15');
     }
     if (!urlObj.searchParams.has('pgbouncer')) {
       urlObj.searchParams.set('pgbouncer', 'true');

@@ -28,9 +28,9 @@ export async function request<T = any>(
 
   const url = `${API_BASE_URL}${endpoint.startsWith('/') ? endpoint : `/${endpoint}`}`;
 
-  // 8-second request timeout to keep UI snappy
+  // 30-second request timeout to allow batch operations and image generations without premature aborts
   const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), 8000);
+  const timeoutId = setTimeout(() => controller.abort(), 30000);
 
   try {
     const res = await fetch(url, {
