@@ -16,6 +16,27 @@ if (!databaseUrl && process.env.MYSQL_USER && process.env.MYSQL_DATABASE) {
   process.env.DATABASE_URL = databaseUrl;
 }
 
+// Optimization for PostgreSQL / Supabase / Neon connection pooler:
+// Restrict connection_limit to 1 per serverless instance to prevent "max clients reached in session mode" (pool_size: 15)
+if (databaseUrl && (databaseUrl.startsWith('postgres://') || databaseUrl.startsWith('postgresql://'))) {
+  try {
+    const urlObj = new URL(databaseUrl);
+    if (!urlObj.searchParams.has('connection_limit')) {
+      urlObj.searchParams.set('connection_limit', '1');
+    }
+    if (!urlObj.searchParams.has('pool_timeout')) {
+      urlObj.searchParams.set('pool_timeout', '20');
+    }
+    if (!urlObj.searchParams.has('pgbouncer')) {
+      urlObj.searchParams.set('pgbouncer', 'true');
+    }
+    databaseUrl = urlObj.toString();
+    process.env.DATABASE_URL = databaseUrl;
+  } catch (e) {
+    // Keep original URL if URL parser fails
+  }
+}
+
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
 const prisma =

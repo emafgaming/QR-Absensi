@@ -5,115 +5,150 @@ import { createAuditLog } from '../utils/audit.js';
 import { MahasiswaSchema, PRODI_OPTIONS } from '../types/index.js';
 import { STUDENTS_2024 } from '../data/students2024.js';
 
+let isSyncing = false;
+
 export async function doSyncMahasiswa2024(userId?: string, ip?: string) {
-  const ALLOWED_PRODIS = [
-    'Manajemen Informatika',
-    'Hubungan Masyarakat',
-    'Komputerisasi Akuntansi',
-    'Administrasi Bisnis',
-  ];
-
-  // 1. Ensure Active Event & Session exist
-  let event = await prisma.event.findFirst({
-    where: { is_active: true },
-  });
-  if (!event) {
-    event = await prisma.event.create({
-      data: {
-        nama_event: 'Wisuda Angkatan 2024 - Politeknik LP3I Kampus Pekanbaru',
-        deskripsi: 'Prosesi Wisuda dan Pelantikan Lulusan Politeknik LP3I Pekanbaru',
-        tanggal: new Date(),
-        lokasi: 'Auditorium Utama Politeknik LP3I',
-        is_active: true,
-      },
-    });
+  if (isSyncing) {
+    const totalInDb = await prisma.mahasiswa.count();
+    return { insertedCount: 0, qrCreatedCount: 0, totalInDb, alreadySyncing: true };
   }
 
-  let sesi = await prisma.sesiWisuda.findFirst({
-    where: { event_id: event.id, is_open: true },
-  });
-  if (!sesi) {
-    sesi = await prisma.sesiWisuda.create({
-      data: {
-        event_id: event.id,
-        nama_sesi: 'Absensi Wisudawan Pagi',
-        waktu_mulai: new Date(),
-        waktu_selesai: new Date(Date.now() + 8 * 3600 * 1000),
-        kuota: 500,
-        is_open: true,
-      },
+  isSyncing = true;
+  try {
+    const ALLOWED_PRODIS = [
+      'Manajemen Informatika',
+      'Hubungan Masyarakat',
+      'Komputerisasi Akuntansi',
+      'Administrasi Bisnis',
+    ];
+
+    // 1. Ensure Active Event & Session exist
+    let event = await prisma.event.findFirst({
+      where: { is_active: true },
     });
-  }
-
-  // 2. Remove any dummy student outside the 4 prodis or dummy NIMs
-  await prisma.mahasiswa.deleteMany({
-    where: {
-      OR: [
-        { prodi: { notIn: ALLOWED_PRODIS } },
-        { nim: { in: ['202201001', '202201002', '202201003', '202201004', '202201005', '202201006', '202201007', '202201008'] } },
-      ],
-    },
-  });
-
-  let insertedCount = 0;
-  let qrCreatedCount = 0;
-
-  for (const s of STUDENTS_2024) {
-    const mhs = await prisma.mahasiswa.upsert({
-      where: { nim: s.nim },
-      update: {
-        nama: s.nama,
-        prodi: s.prodi,
-        angkatan: s.angkatan || '2024',
-        fakultas: s.fakultas || '-',
-        status_kelayakan: s.status_kelayakan || 'ELIGIBLE',
-      },
-      create: {
-        nim: s.nim,
-        nama: s.nama,
-        prodi: s.prodi,
-        angkatan: s.angkatan || '2024',
-        fakultas: s.fakultas || '-',
-        status_kelayakan: s.status_kelayakan || 'ELIGIBLE',
-      },
-    });
-    insertedCount++;
-
-    const existingQr = await prisma.qrCode.findFirst({
-      where: { mahasiswa_id: mhs.id, sesi_id: sesi.id, status: 'ACTIVE' },
-    });
-    if (!existingQr) {
-      await prisma.qrCode.create({
+    if (!event) {
+      event = await prisma.event.create({
         data: {
-          mahasiswa_id: mhs.id,
-          sesi_id: sesi.id,
-          token: `WATT-${crypto.randomBytes(32).toString('hex')}`,
-          status: 'ACTIVE',
+          nama_event: 'Wisuda Angkatan 2024 - Politeknik LP3I Kampus Pekanbaru',
+          deskripsi: 'Prosesi Wisuda dan Pelantikan Lulusan Politeknik LP3I Pekanbaru',
+          tanggal: new Date(),
+          lokasi: 'Auditorium Utama Politeknik LP3I',
+          is_active: true,
         },
       });
-      qrCreatedCount++;
     }
-  }
 
-  const totalInDb = await prisma.mahasiswa.count();
-
-  if (userId) {
-    await createAuditLog({
-      userId,
-      action: 'SYNC_MAHASISWA_2024',
-      entity: 'Mahasiswa',
-      reason: `Sinkronisasi resmi 77 mahasiswa Angkatan 2024 (${insertedCount} diproses, ${qrCreatedCount} QR baru)`,
-      newValue: { insertedCount, qrCreatedCount, totalInDb },
-      ipAddress: ip,
+    let sesi = await prisma.sesiWisuda.findFirst({
+      where: { event_id: event.id, is_open: true },
     });
-  }
+    if (!sesi) {
+      sesi = await prisma.sesiWisuda.create({
+        data: {
+          event_id: event.id,
+          nama_sesi: 'Absensi Wisudawan Pagi',
+          waktu_mulai: new Date(),
+          waktu_selesai: new Date(Date.now() + 8 * 3600 * 1000),
+          kuota: 500,
+          is_open: true,
+        },
+      });
+    }
 
-  return { insertedCount, qrCreatedCount, totalInDb };
+    // 2. Remove any dummy student outside the 4 prodis or dummy NIMs
+    await prisma.mahasiswa.deleteMany({
+      where: {
+        OR: [
+          { prodi: { notIn: ALLOWED_PRODIS } },
+          { nim: { in: ['202201001', '202201002', '202201003', '202201004', '202201005', '202201006', '202201007', '202201008'] } },
+        ],
+      },
+    });
+
+    // 3. Batch check existing students to minimize queries on pooled databases
+    const existingMhs = await prisma.mahasiswa.findMany({
+      select: { id: true, nim: true },
+    });
+    const existingMap = new Map(existingMhs.map((m) => [m.nim, m.id]));
+
+    let insertedCount = 0;
+    let qrCreatedCount = 0;
+
+    for (const s of STUDENTS_2024) {
+      const existingId = existingMap.get(s.nim);
+      let mhsId = existingId;
+
+      if (!existingId) {
+        const created = await prisma.mahasiswa.create({
+          data: {
+            nim: s.nim,
+            nama: s.nama,
+            prodi: s.prodi,
+            angkatan: s.angkatan || '2024',
+            fakultas: s.fakultas || '-',
+            status_kelayakan: s.status_kelayakan || 'ELIGIBLE',
+          },
+        });
+        mhsId = created.id;
+        existingMap.set(created.nim, created.id);
+        insertedCount++;
+      } else {
+        await prisma.mahasiswa.update({
+          where: { id: existingId },
+          data: {
+            nama: s.nama,
+            prodi: s.prodi,
+            angkatan: s.angkatan || '2024',
+          },
+        });
+        insertedCount++;
+      }
+
+      // Check QR for active session
+      const existingQr = await prisma.qrCode.findFirst({
+        where: { mahasiswa_id: mhsId, sesi_id: sesi.id, status: 'ACTIVE' },
+      });
+      if (!existingQr && mhsId) {
+        await prisma.qrCode.create({
+          data: {
+            mahasiswa_id: mhsId,
+            sesi_id: sesi.id,
+            token: `WATT-${crypto.randomBytes(32).toString('hex')}`,
+            status: 'ACTIVE',
+          },
+        });
+        qrCreatedCount++;
+      }
+    }
+
+    const totalInDb = await prisma.mahasiswa.count();
+
+    if (userId) {
+      await createAuditLog({
+        userId,
+        action: 'SYNC_MAHASISWA_2024',
+        entity: 'Mahasiswa',
+        reason: `Sinkronisasi resmi 77 mahasiswa Angkatan 2024 (${insertedCount} diproses, ${qrCreatedCount} QR baru)`,
+        newValue: { insertedCount, qrCreatedCount, totalInDb },
+        ipAddress: ip,
+      });
+    }
+
+    return { insertedCount, qrCreatedCount, totalInDb };
+  } finally {
+    isSyncing = false;
+  }
 }
 
 export async function syncMahasiswa2024(req: Request, res: Response) {
   try {
     const result = await doSyncMahasiswa2024(req.user?.id, req.ip);
+    if ((result as any).alreadySyncing) {
+      return res.json({
+        success: true,
+        message: 'Proses sinkronisasi sedang berjalan di latar belakang, silakan refresh halaman dalam beberapa detik.',
+        data: result,
+      });
+    }
     return res.json({
       success: true,
       message: `Berhasil menyinkronkan ${result.insertedCount} data mahasiswa Angkatan 2024 ke database. Total mahasiswa sekarang: ${result.totalInDb}.`,
@@ -127,11 +162,6 @@ export async function syncMahasiswa2024(req: Request, res: Response) {
 
 export async function getAll(req: Request, res: Response) {
   try {
-    // Auto-seed if database is empty or has old dummy count (<= 10 students)
-    const existingCount = await prisma.mahasiswa.count();
-    if (existingCount <= 10) {
-      await doSyncMahasiswa2024();
-    }
     const {
       page = '1',
       limit = '20',
